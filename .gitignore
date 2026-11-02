@@ -1,0 +1,7 @@
+# The OCI image layers are large binary artifacts and are kept outside Git.
+slideslam-single-car-small-city/blobs/
+slideslam-single-car-small-city.tar
+
+# Local runtime output.
+temp/
+记录文件/
