@@ -1,0 +1,8 @@
+ARG BASE_IMAGE=slideslam-single-car:small-city-2026-10-29
+FROM ${BASE_IMAGE}
+
+# Replace the editable workspace in the baseline image with the tracked source.
+COPY source/ /opt/slideslam_docker_ws/src/
+
+# Rebuild the ROS workspace so the image contains binaries for this source tree.
+RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && cd /opt/slideslam_docker_ws && catkin build"

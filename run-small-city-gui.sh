@@ -2,7 +2,7 @@
 set -euo pipefail
 
 WORKSPACE="/home/ubuntu20/workspace/slideslam"
-IMAGE="slideslam-single-car:small-city-2026-10-29"
+IMAGE="${SLIDESLAM_IMAGE:-slideslam-single-car:small-city-2026-10-29}"
 ARCHIVE="$WORKSPACE/slideslam-single-car-small-city.tar"
 CONTAINER="slideslam_small_city"
 
