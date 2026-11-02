@@ -1,0 +1,6 @@
+# The repository also contains the 7.9 GB OCI archive and unrelated working
+# directories. Only source and the Docker build file belong in this context.
+*
+!source/
+!source/**
+!Dockerfile.small-city
