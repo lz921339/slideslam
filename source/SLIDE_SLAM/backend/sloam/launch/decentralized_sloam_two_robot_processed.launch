@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="enable_rviz" default="true" />
+    <arg name="turn_off_intra_loop_closure" default="true" />
+    <arg name="turn_off_inter_loop_closure" default="false" />
+
+    <group if="$(arg enable_rviz)">
+        <node pkg="rviz" type="rviz" name="sloam_rviz" output="screen"
+              args="-d $(find sloam)/launch/rviz/decentralized_sloam.rviz" />
+    </group>
+
+    <include file="$(find sloam)/launch/decentralized_sloam.launch">
+        <arg name="hostRobot_ID" value="0" />
+        <arg name="odom_topic" value="/robot0/odom" />
+        <arg name="priorTFKnown" value="false" />
+        <arg name="turn_off_intra_loop_closure" value="$(arg turn_off_intra_loop_closure)" />
+        <arg name="turn_off_inter_loop_closure" value="$(arg turn_off_inter_loop_closure)" />
+    </include>
+
+    <include file="$(find sloam)/launch/decentralized_sloam.launch">
+        <arg name="hostRobot_ID" value="1" />
+        <arg name="odom_topic" value="/robot1/odom" />
+        <arg name="priorTFKnown" value="false" />
+        <arg name="turn_off_intra_loop_closure" value="$(arg turn_off_intra_loop_closure)" />
+        <arg name="turn_off_inter_loop_closure" value="$(arg turn_off_inter_loop_closure)" />
+    </include>
+
+    <!-- Each included launch loads sloam.yaml (whose default is 8). Override it
+         after both includes so this demo allocates and communicates for 2 robots. -->
+    <param name="/sloam/number_of_robots" value="2" />
+</launch>

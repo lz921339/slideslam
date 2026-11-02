@@ -1,0 +1,19 @@
+<launch>
+  <arg name="odom_topic" default="/robot0/odom"/>
+
+  <param name="robot_name" value="robot0"/>
+  <param name="process_cloud_node_name" value="process_cloud_node"/>
+  <node pkg="scan2shape_launch" type="process_cloud_node.py"
+        name="process_cloud_node" ns="robot0" output="screen">
+    <remap from="/odom" to="$(arg odom_topic)"/>
+    <rosparam command="load" file="$(find scan2shape_launch)/config/process_cloud_node_indoor_params.yaml"/>
+    <!-- Keep this consistent with rgb_segmentation_single_car_sim.launch. -->
+    <param name="confidence_threshold" value="0.25"/>
+    <param name="use_sim" value="false"/>
+    <param name="reference_frame" value="world"/>
+    <param name="range_image_frame" value="base_footprint"/>
+    <param name="undistorted_cloud_frame" value="camera_optical_frame"/>
+    <param name="publish_legacy_tf" value="false"/>
+    <param name="expected_segmentation_frequency" value="1.0"/>
+  </node>
+</launch>

@@ -5,3 +5,14 @@ slideslam-single-car-small-city.tar
 # Local runtime output.
 temp/
 记录文件/
+
+# Extracted source tree contains upstream repositories; keep their metadata out
+# of this project's Git history.
+source/**/.git/
+
+# Large runtime/model artifacts are managed separately from source code.
+source/SLIDE_SLAM/frontend/object_modeller/models/*.pt
+source/**/build/
+source/**/devel/
+source/**/install/
+source/**/__pycache__/

@@ -1,0 +1,104 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: world
+    Frame Rate: 20
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Reference Frame: base_footprint
+      Plane Cell Count: 30
+      Cell Size: 1
+      Value: true
+    - Class: rviz/RobotModel
+      Name: Car
+      Enabled: true
+      Robot Description: robot_description
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1
+      Value: true
+    - Class: rviz/Image
+      Name: RGB camera
+      Enabled: true
+      Image Topic: /robot0/camera/color/image_raw
+      Transport Hint: raw
+      Queue Size: 2
+      Value: true
+    - Class: rviz/PointCloud2
+      Name: Raw depth cloud
+      Enabled: true
+      Topic: /robot0/camera/depth/points
+      Queue Size: 2
+      Color Transformer: RGB8
+      Position Transformer: XYZ
+      Style: Points
+      Size (Pixels): 2
+      Decay Time: 0
+      Use Fixed Frame: true
+      Value: true
+    - Class: rviz/PointCloud2
+      Name: Semantic cloud
+      Enabled: true
+      Topic: /robot0/filtered_semantic_segmentation
+      Queue Size: 2
+      Color Transformer: Intensity
+      Position Transformer: XYZ
+      Style: Points
+      Size (Pixels): 3
+      Decay Time: 0
+      Use Fixed Frame: true
+      Value: true
+    - Class: rviz/Odometry
+      Name: Optimized odometry
+      Enabled: true
+      Topic: /robot0/sloam_odom_high_freq
+      Keep: 100
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+      Value: true
+    - Class: rviz/MarkerArray
+      Name: Semantic landmarks
+      Enabled: true
+      Marker Topic: /robot_0/sloam/optimized_point_landmarks
+      Queue Size: 20
+      Value: true
+    - Class: rviz/MarkerArray
+      Name: Trajectory
+      Enabled: true
+      Marker Topic: /sloam0/robot0/trajectory
+      Queue Size: 20
+      Value: true
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Target Frame: base_footprint
+      Distance: 12
+      Pitch: 0.65
+      Yaw: 0.8
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Near Clip Distance: 0.01
+    Saved: ~
+Window Geometry:
+  Width: 1280
+  Height: 800
+  X: 50
+  Y: 50

@@ -1,0 +1,38 @@
+<launch>
+    <!-- Make the workspace-built Gazebo plugins available after PX4 setup. -->
+    <env name="GAZEBO_PLUGIN_PATH"
+         value="/home/yd/slideslam/demo05_ws/devel/lib:$(optenv GAZEBO_PLUGIN_PATH)" />
+
+    <!-- PX4 must be built and its ROS_PACKAGE_PATH configured before use. -->
+    <arg name="world" default="$(find urdf02_gazebo)/worlds/box_house.world" />
+    <arg name="vehicle" default="iris" />
+    <arg name="drone_z" default="0.0671" />
+    <arg name="car_x" default="1.0" />
+    <arg name="car_y" default="0.0" />
+    <arg name="car_z" default="0.25" />
+    <arg name="auto_arm" default="false" />
+    <arg name="gui" default="true" />
+    <arg name="target_x" default="0.0" />
+    <arg name="target_y" default="0.0" />
+    <arg name="target_z" default="2.0" />
+
+    <!-- Start PX4 SITL, MAVROS, Gazebo and the PX4 vehicle in one Gazebo world. -->
+    <include file="$(find px4)/launch/mavros_posix_sitl.launch">
+        <arg name="vehicle" value="$(arg vehicle)" />
+        <arg name="world" value="$(arg world)" />
+        <arg name="z" value="$(arg drone_z)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="verbose" value="true" />
+    </include>
+
+    <!-- Add the car and ROS-side communication/control nodes. -->
+    <include file="$(find urdf02_gazebo)/launch/px4_car.launch">
+        <arg name="car_x" value="$(arg car_x)" />
+        <arg name="car_y" value="$(arg car_y)" />
+        <arg name="car_z" value="$(arg car_z)" />
+        <arg name="auto_arm" value="$(arg auto_arm)" />
+        <arg name="target_x" value="$(arg target_x)" />
+        <arg name="target_y" value="$(arg target_y)" />
+        <arg name="target_z" value="$(arg target_z)" />
+    </include>
+</launch>

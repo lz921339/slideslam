@@ -1,0 +1,732 @@
+<?xml version="1.0"?>
+<!--
+    完整机器人模型 - Gazebo仿真版本
+    包含底盘、轮子、身体、腿部、头部等部件
+    参数集中定义，便于维护和修改
+-->
+<robot name="mycar" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- ####################################################################### -->
+    <!--                                                                         -->
+    <!--                          参数定义区 (集中管理)                            -->
+    <!--                                                                         -->
+    <!-- ####################################################################### -->
+
+    <!-- ========================================= -->
+    <!-- 底盘参数 (base_link) -->
+    <!-- ========================================= -->
+    <xacro:property name="base_radius" value="0.1" />        <!-- 底盘半径: 10cm -->
+    <xacro:property name="base_height" value="0.1" />       <!-- 底盘高度: 10cm -->
+    <xacro:property name="base_z_offset" value="0.1" />     <!-- 底盘离地高度 -->
+    <xacro:property name="base_mass" value="2.0" />         <!-- 底盘质量: 2kg -->
+
+    <!-- ========================================= -->
+    <!-- 驱动轮参数 -->
+    <!-- ========================================= -->
+    <xacro:property name="wheel_radius" value="0.05" />     <!-- 轮子半径: 5cm -->
+    <xacro:property name="wheel_length" value="0.01" />     <!-- 轮子宽度: 1cm -->
+    <xacro:property name="wheel_y_offset" value="0.1" />    <!-- 轮子Y方向偏移 -->
+    <xacro:property name="wheel_z_offset" value="-0.05" />  <!-- 轮子Z方向偏移 -->
+    <xacro:property name="wheel_mass" value="0.2" />        <!-- 轮子质量: 0.2kg -->
+    <xacro:property name="wheel_separation" value="0.2" />  <!-- 左右轮距 -->
+
+    <!-- ========================================= -->
+    <!-- 万向轮参数 -->
+    <!-- ========================================= -->
+    <xacro:property name="caster_radius" value="0.03" />    <!-- 万向轮半径: 3cm -->
+    <xacro:property name="caster_mass" value="0.05" />      <!-- 万向轮质量: 0.05kg -->
+    <xacro:property name="caster_front_x" value="0.07" />   <!-- 前万向轮X偏移 -->
+    <xacro:property name="caster_back_x" value="-0.07" />   <!-- 后万向轮X偏移 -->
+    <xacro:property name="caster_z_offset" value="-0.07" /> <!-- 万向轮Z偏移 -->
+
+    <!-- ========================================= -->
+    <!-- 身体平台参数 (box1-box5) -->
+    <!-- ========================================= -->
+    <!-- 底层平台 box1 -->
+    <xacro:property name="box1_x" value="0.3" />
+    <xacro:property name="box1_y" value="0.3" />
+    <xacro:property name="box1_z" value="0.02" />
+    <xacro:property name="box1_mass" value="0.5" />
+    <xacro:property name="box1_z_offset" value="0.07" />
+
+    <!-- 后面板 box2 -->
+    <xacro:property name="box2_x" value="0.05" />
+    <xacro:property name="box2_y" value="0.3" />
+    <xacro:property name="box2_z" value="0.2" />
+    <xacro:property name="box2_mass" value="0.3" />
+    <xacro:property name="box2_x_offset" value="-0.125" />
+    <xacro:property name="box2_z_offset" value="0.18" />
+
+    <!-- 左侧板 box3 -->
+    <xacro:property name="box3_x" value="0.3" />
+    <xacro:property name="box3_y" value="0.05" />
+    <xacro:property name="box3_z" value="0.2" />
+    <xacro:property name="box3_mass" value="0.3" />
+    <xacro:property name="box3_y_offset" value="0.125" />
+    <xacro:property name="box3_z_offset" value="0.18" />
+
+    <!-- 右侧板 box4 -->
+    <xacro:property name="box4_x" value="0.3" />
+    <xacro:property name="box4_y" value="0.05" />
+    <xacro:property name="box4_z" value="0.2" />
+    <xacro:property name="box4_mass" value="0.3" />
+    <xacro:property name="box4_y_offset" value="-0.125" />
+    <xacro:property name="box4_z_offset" value="0.18" />
+
+    <!-- 顶层平台 box5 -->
+    <xacro:property name="box5_x" value="0.3" />
+    <xacro:property name="box5_y" value="0.3" />
+    <xacro:property name="box5_z" value="0.02" />
+    <xacro:property name="box5_mass" value="0.5" />
+    <xacro:property name="box5_z_offset" value="0.27" />
+
+    <!-- ========================================= -->
+    <!-- 腿部参数 -->
+    <!-- ========================================= -->
+    <!-- 左右腿上段 -->
+    <xacro:property name="leg_x" value="0.05" />
+    <xacro:property name="leg_y" value="0.05" />
+    <xacro:property name="leg_z" value="0.16" />
+    <xacro:property name="leg_mass" value="0.2" />
+    <xacro:property name="leg_y_offset" value="0.08" />
+
+    <!-- 左右腿下段 (leg1) -->
+    <xacro:property name="leg1_x" value="0.3" />
+    <xacro:property name="leg1_y" value="0.05" />
+    <xacro:property name="leg1_z" value="0.05" />
+    <xacro:property name="leg1_mass" value="0.3" />
+    <xacro:property name="leg1_x_offset" value="0.125" />
+    <xacro:property name="leg1_z_offset" value="-0.105" />
+
+    <!-- ========================================= -->
+    <!-- 头部参数 -->
+    <!-- ========================================= -->
+    <!-- 脖子 -->
+    <xacro:property name="neck_radius" value="0.04" />
+    <xacro:property name="neck_height" value="0.01" />
+    <xacro:property name="neck_mass" value="0.1" />
+    <xacro:property name="neck_z_offset" value="0.015" />
+
+    <!-- 头部 -->
+    <xacro:property name="head_radius" value="0.07" />
+    <xacro:property name="head_height" value="0.05" />
+    <xacro:property name="head_mass" value="0.3" />
+    <xacro:property name="head_z_offset" value="0.03" />
+
+    <!-- 眼睛 -->
+    <xacro:property name="eye_radius" value="0.01" />
+    <xacro:property name="eye_mass" value="0.01" />
+    <xacro:property name="eye1_y_offset" value="0.035" />
+    <xacro:property name="eye2_y_offset" value="-0.035" />
+    <xacro:property name="eye_x_offset" value="0.06" />
+    <xacro:property name="eye_z_offset" value="0.01" />
+
+    <!-- ========================================= -->
+    <!-- 关节部件参数 -->
+    <!-- ========================================= -->
+    <xacro:property name="joint_x" value="0.1" />
+    <xacro:property name="joint_y" value="0.14" />
+    <xacro:property name="joint_z" value="0.065" />
+    <xacro:property name="joint_mass" value="0.2" />
+    <xacro:property name="joint_y_offset" value="0.055" />
+    <xacro:property name="joint_z_offset" value="0.05" />
+
+    <!-- ========================================= -->
+    <!-- body_link 参数 -->
+    <!-- ========================================= -->
+    <xacro:property name="body_radius" value="0.025" />
+    <xacro:property name="body_height" value="0.01" />
+    <xacro:property name="body_mass" value="0.1" />
+    <xacro:property name="body_z_offset" value="0.055" />
+
+    <!-- ####################################################################### -->
+    <!--                                                                         -->
+    <!--                            宏定义区                                      -->
+    <!--                                                                         -->
+    <!-- ####################################################################### -->
+
+    <!-- ========================================= -->
+    <!-- 惯性矩阵计算宏 -->
+    <!-- ========================================= -->
+    
+    <!-- 圆柱体惯性宏 -->
+    <xacro:macro name="cylinder_inertial" params="mass radius length">
+        <inertial>
+            <mass value="${mass}" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="${mass * (3*radius*radius + length*length) / 12}" 
+                     ixy="0" ixz="0"
+                     iyy="${mass * (3*radius*radius + length*length) / 12}" 
+                     iyz="0"
+                     izz="${mass * radius*radius / 2}" />
+        </inertial>
+    </xacro:macro>
+    
+    <!-- 长方体惯性宏 -->
+    <xacro:macro name="box_inertial" params="mass x y z">
+        <inertial>
+            <mass value="${mass}" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="${mass * (y*y + z*z) / 12}" 
+                     ixy="0" ixz="0"
+                     iyy="${mass * (x*x + z*z) / 12}" 
+                     iyz="0"
+                     izz="${mass * (x*x + y*y) / 12}" />
+        </inertial>
+    </xacro:macro>
+    
+    <!-- 球体惯性宏 -->
+    <xacro:macro name="sphere_inertial" params="mass radius">
+        <inertial>
+            <mass value="${mass}" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="${2 * mass * radius * radius / 5}" 
+                     ixy="0" ixz="0"
+                     iyy="${2 * mass * radius * radius / 5}" 
+                     iyz="0"
+                     izz="${2 * mass * radius * radius / 5}" />
+        </inertial>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 材质定义宏 -->
+    <!-- ========================================= -->
+    <xacro:macro name="baselink_material">
+        <material name="baselink_color">
+            <color rgba="1 0 0 0.5" />
+        </material>
+    </xacro:macro>
+    
+    <xacro:macro name="wheel_material">
+        <material name="wheel_color">
+            <color rgba="0.0 0.0 0.0 0.5" />
+        </material>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 驱动轮宏定义 -->
+    <!-- ========================================= -->
+    <xacro:macro name="drive_wheel" params="name y_offset">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="1.5708 0 0" />
+                <xacro:wheel_material />
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="1.5708 0 0" />
+            </collision>
+            <xacro:cylinder_inertial mass="${wheel_mass}" radius="${wheel_radius}" length="${wheel_length}" />
+        </link>
+        
+        <joint name="${name}2_link" type="continuous">
+            <parent link="base_link" />
+            <child link="${name}" />
+            <origin xyz="0 ${y_offset} ${wheel_z_offset}" />
+            <axis xyz="0 1 0" />
+        </joint>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 万向轮宏定义 -->
+    <!-- ========================================= -->
+    <xacro:macro name="caster_wheel" params="name x_offset">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <sphere radius="${caster_radius}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <xacro:wheel_material />
+            </visual>
+            <collision>
+                <geometry>
+                    <sphere radius="${caster_radius}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+            </collision>
+            <xacro:sphere_inertial mass="${caster_mass}" radius="${caster_radius}" />
+        </link>
+        
+        <joint name="${name}2_link" type="continuous">
+            <parent link="base_link" />
+            <child link="${name}" />
+            <origin xyz="${x_offset} 0 ${caster_z_offset}" />
+            <axis xyz="1 1 1" />
+        </joint>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 身体平台宏定义 -->
+    <!-- ========================================= -->
+    <xacro:macro name="box_platform" params="name x y z mass x_offset y_offset z_offset joint_type">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <box size="${x} ${y} ${z}"/>
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <material name="box_color">
+                    <color rgba="0.0 1.0 1.0 1" />
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="${x} ${y} ${z}"/>
+                </geometry>
+            </collision>
+            <xacro:box_inertial mass="${mass}" x="${x}" y="${y}" z="${z}" />
+        </link>
+
+        <joint name="${name}2_link" type="${joint_type}">
+            <parent link="base_link" />
+            <child link="${name}" />
+            <origin xyz="${x_offset} ${y_offset} ${z_offset}" />
+            <xacro:if value="${joint_type != 'fixed'}">
+                <axis xyz="0 1 0" />
+            </xacro:if>
+        </joint>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 腿部宏定义 -->
+    <!-- ========================================= -->
+    <xacro:macro name="leg" params="name parent y_offset color_r color_g color_b joint_type">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <box size="${leg_x} ${leg_y} ${leg_z}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <material name="${name}_color">
+                    <color rgba="${color_r} ${color_g} ${color_b} 1" />
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="${leg_x} ${leg_y} ${leg_z}" />
+                </geometry>
+            </collision>
+            <xacro:box_inertial mass="${leg_mass}" x="${leg_x}" y="${leg_y}" z="${leg_z}" />
+        </link>
+
+        <joint name="${name}2_link" type="${joint_type}">
+            <parent link="${parent}" />
+            <child link="${name}" />
+            <origin xyz="0 ${y_offset} 0" />
+            <xacro:if value="${joint_type == 'continuous'}">
+                <axis xyz="0 1 0" />
+            </xacro:if>
+        </joint>
+
+        <!-- 腿下段 -->
+        <link name="${name}1">
+            <visual>
+                <geometry>
+                    <box size="${leg1_x} ${leg1_y} ${leg1_z}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <material name="${name}1_color">
+                    <color rgba="0.5 0.5 0 1" />
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="${leg1_x} ${leg1_y} ${leg1_z}" />
+                </geometry>
+            </collision>
+            <xacro:box_inertial mass="${leg1_mass}" x="${leg1_x}" y="${leg1_y}" z="${leg1_z}" />
+        </link>
+
+        <joint name="${name}12_link" type="${joint_type}">
+            <parent link="${name}" />
+            <child link="${name}1" />
+            <origin xyz="${leg1_x_offset} 0 ${leg1_z_offset}" />
+            <xacro:if value="${joint_type == 'continuous'}">
+                <axis xyz="0 1 0" />
+            </xacro:if>
+        </joint>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 眼睛宏定义 -->
+    <!-- ========================================= -->
+    <xacro:macro name="eye" params="name y_offset joint_type">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <sphere radius="${eye_radius}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <material name="${name}_color">
+                    <color rgba="0 0 0 1" />
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <sphere radius="${eye_radius}" />
+                </geometry>
+            </collision>
+            <xacro:sphere_inertial mass="${eye_mass}" radius="${eye_radius}" />
+        </link>
+
+        <joint name="${name}2_link" type="${joint_type}">
+            <parent link="head_link" />
+            <child link="${name}" />
+            <origin xyz="${eye_x_offset} ${y_offset} ${eye_z_offset}" />
+            <xacro:if value="${joint_type == 'continuous'}">
+                <axis xyz="1 1 1" />
+            </xacro:if>
+        </joint>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 关节部件宏定义 -->
+    <!-- ========================================= -->
+    <xacro:macro name="arm_joint" params="name parent y_offset joint_type">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <box size="${joint_x} ${joint_y} ${joint_z}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <material name="${name}_color">
+                    <color rgba="0 0.5 0.5 1" />
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="${joint_x} ${joint_y} ${joint_z}" />
+                </geometry>
+            </collision>
+            <xacro:box_inertial mass="${joint_mass}" x="${joint_x}" y="${joint_y}" z="${joint_z}" />
+        </link>
+
+        <joint name="${name}2_link" type="${joint_type}">
+            <parent link="${parent}" />
+            <child link="${name}" />
+            <origin xyz="0 ${y_offset} ${joint_z_offset}" />
+            <xacro:if value="${joint_type == 'continuous'}">
+                <axis xyz="0 1 0" />
+            </xacro:if>
+        </joint>
+    </xacro:macro>
+
+    <!-- ####################################################################### -->
+    <!--                                                                         -->
+    <!--                          机器人结构区                                    -->
+    <!--                                                                         -->
+    <!-- ####################################################################### -->
+    
+    <!-- base_footprint -->
+    <link name="base_footprint">
+        <visual>
+            <geometry>
+                <sphere radius="0.001" />
+            </geometry>
+        </visual>
+    </link>
+
+    <!-- base_link - 圆柱底盘 -->
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${base_radius}" length="${base_height}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <xacro:baselink_material />
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${base_radius}" length="${base_height}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+        </collision>
+        <xacro:cylinder_inertial mass="${base_mass}" radius="${base_radius}" length="${base_height}" />
+    </link>
+
+    <joint name="link2footprint" type="fixed">
+        <parent link="base_footprint" />
+        <child link="base_link"/>
+        <origin xyz="0 0 ${base_z_offset}" />
+    </joint>
+
+    <!-- 左驱动轮 -->
+    <xacro:drive_wheel name="left_wheel" y_offset="${wheel_y_offset}" />
+
+    <!-- 右驱动轮 -->
+    <xacro:drive_wheel name="right_wheel" y_offset="-${wheel_y_offset}" />
+
+    <!-- 前万向轮 -->
+    <xacro:caster_wheel name="front_wheel" x_offset="${caster_front_x}" />
+
+    <!-- 后万向轮 -->
+    <xacro:caster_wheel name="back_wheel" x_offset="${caster_back_x}" />
+
+    <!-- body_link -->
+    <link name="body_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${body_radius}" length="${body_height}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <material name="bodylink_color">
+                <color rgba="0 0.5 0.5 0.5" />
+            </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${body_radius}" length="${body_height}" />
+            </geometry>
+        </collision>
+        <xacro:cylinder_inertial mass="${body_mass}" radius="${body_radius}" length="${body_height}" />
+    </link>
+
+    <joint name="body2footprint" type="fixed">
+        <parent link="base_link" />
+        <child link="body_link" />
+        <origin xyz="0 0 ${body_z_offset}" />
+    </joint>
+
+    <!-- 身体平台 box1-box5 -->
+    <xacro:box_platform name="box1" x="${box1_x}" y="${box1_y}" z="${box1_z}" 
+                        mass="${box1_mass}" x_offset="0" y_offset="0" z_offset="${box1_z_offset}" 
+                        joint_type="fixed" />
+    
+    <xacro:box_platform name="box2" x="${box2_x}" y="${box2_y}" z="${box2_z}" 
+                        mass="${box2_mass}" x_offset="${box2_x_offset}" y_offset="0" z_offset="${box2_z_offset}" 
+                        joint_type="fixed" />
+    
+    <xacro:box_platform name="box3" x="${box3_x}" y="${box3_y}" z="${box3_z}" 
+                        mass="${box3_mass}" x_offset="0" y_offset="${box3_y_offset}" z_offset="${box3_z_offset}" 
+                        joint_type="fixed" />
+    
+    <xacro:box_platform name="box4" x="${box4_x}" y="${box4_y}" z="${box4_z}" 
+                        mass="${box4_mass}" x_offset="0" y_offset="${box4_y_offset}" z_offset="${box4_z_offset}" 
+                        joint_type="fixed" />
+    
+    <xacro:box_platform name="box5" x="${box5_x}" y="${box5_y}" z="${box5_z}" 
+                        mass="${box5_mass}" x_offset="0" y_offset="0" z_offset="${box5_z_offset}" 
+                        joint_type="fixed" />
+
+    <!-- 腿部 -->
+    <xacro:leg name="left_leg" parent="box3" y_offset="${leg_y_offset}" 
+               color_r="0.0" color_g="0.0" color_b="1.0" joint_type="fixed" />
+    <xacro:leg name="right_leg" parent="box4" y_offset="-${leg_y_offset}" 
+               color_r="0.5" color_g="0.5" color_b="1.0" joint_type="fixed" />
+
+    <!-- 脖子 -->
+    <link name="neck_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${neck_radius}" length="${neck_height}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <material name="neck_color">
+                <color rgba="0.5 0.1 0.1 1" />
+            </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${neck_radius}" length="${neck_height}" />
+            </geometry>
+        </collision>
+        <xacro:cylinder_inertial mass="${neck_mass}" radius="${neck_radius}" length="${neck_height}" />
+    </link>
+
+    <joint name="neck2footprint" type="fixed">
+        <parent link="box5" />
+        <child link="neck_link" />
+        <origin xyz="0 0 ${neck_z_offset}" />
+    </joint>
+
+    <!-- 头部 -->
+    <link name="head_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${head_radius}" length="${head_height}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <material name="head_color">
+                <color rgba="0 1 0 1" />
+            </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${head_radius}" length="${head_height}" />
+            </geometry>
+        </collision>
+        <xacro:cylinder_inertial mass="${head_mass}" radius="${head_radius}" length="${head_height}" />
+    </link>
+
+    <joint name="head2footprint" type="fixed">
+        <parent link="neck_link" />
+        <child link="head_link" />
+        <origin xyz="0 0 ${head_z_offset}" />
+    </joint>
+
+    <!-- 眼睛 -->
+    <xacro:eye name="eye1" y_offset="${eye1_y_offset}" joint_type="fixed" />
+    <xacro:eye name="eye2" y_offset="${eye2_y_offset}" joint_type="fixed" />
+
+    <!-- 手臂关节 -->
+    <xacro:arm_joint name="left_joint" parent="box3" y_offset="${joint_y_offset}" joint_type="fixed" />
+    <xacro:arm_joint name="right_joint" parent="box4" y_offset="-${joint_y_offset}" joint_type="fixed" />
+
+    <!-- ####################################################################### -->
+    <!--                                                                         -->
+    <!--                       Gazebo 仿真配置区                                  -->
+    <!--                                                                         -->
+    <!-- ####################################################################### -->
+
+    <!-- ========================================= -->
+    <!-- Gazebo 材质设置 -->
+    <!-- ========================================= -->
+    
+    <!-- 底盘 - 红色 -->
+    <gazebo reference="base_link">
+        <material>Gazebo/Red</material>
+    </gazebo>
+    
+    <!-- 驱动轮 - 深灰色，高摩擦 -->
+    <gazebo reference="left_wheel">
+        <material>Gazebo/Black</material>
+        <mu1>1.5</mu1>
+        <mu2>1.5</mu2>
+        <kp>1000000.0</kp>
+        <kd>100.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxVel>1.0</maxVel>
+    </gazebo>
+    
+    <gazebo reference="right_wheel">
+        <material>Gazebo/Black</material>
+        <mu1>1.5</mu1>
+        <mu2>1.5</mu2>
+        <kp>1000000.0</kp>
+        <kd>100.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxVel>1.0</maxVel>
+    </gazebo>
+    
+    <!-- 万向轮 - 浅灰色，低摩擦 -->
+    <gazebo reference="front_wheel">
+        <material>Gazebo/White</material>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
+    </gazebo>
+    
+    <gazebo reference="back_wheel">
+        <material>Gazebo/White</material>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
+    </gazebo>
+    
+    <!-- body_link - 青绿色 -->
+    <gazebo reference="body_link">
+        <material>Gazebo/Teal</material>
+    </gazebo>
+    
+    <!-- 身体平台 - 橙色 -->
+    <gazebo reference="box1">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    
+    <gazebo reference="box2">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    
+    <gazebo reference="box3">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    
+    <gazebo reference="box4">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    
+    <gazebo reference="box5">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    
+    <!-- 腿部 - 蓝色 -->
+    <gazebo reference="left_leg">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+    
+    <gazebo reference="right_leg">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+    
+    <gazebo reference="left_leg1">
+        <material>Gazebo/SkyBlue</material>
+    </gazebo>
+    
+    <gazebo reference="right_leg1">
+        <material>Gazebo/SkyBlue</material>
+    </gazebo>
+    
+    <!-- 脖子 - 棕色 -->
+    <gazebo reference="neck_link">
+        <material>Gazebo/Wood</material>
+    </gazebo>
+    
+    <!-- 头部 - 绿色 -->
+    <gazebo reference="head_link">
+        <material>Gazebo/Green</material>
+    </gazebo>
+    
+    <!-- 眼睛 - 黑色 -->
+    <gazebo reference="eye1">
+        <material>Gazebo/Black</material>
+    </gazebo>
+    
+    <gazebo reference="eye2">
+        <material>Gazebo/Black</material>
+    </gazebo>
+    
+    <!-- 手臂关节 - 紫色 -->
+    <gazebo reference="left_joint">
+        <material>Gazebo/Purple</material>
+    </gazebo>
+    
+    <gazebo reference="right_joint">
+        <material>Gazebo/Purple</material>
+    </gazebo>
+
+    <!-- ========================================= -->
+    <!-- Gazebo 差速驱动控制器插件 -->
+    <!-- ========================================= -->
+    <gazebo>
+        <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+            <leftJoint>left_wheel2_link</leftJoint>
+            <rightJoint>right_wheel2_link</rightJoint>
+            <wheelSeparation>${wheel_separation}</wheelSeparation>
+            <wheelDiameter>${2 * wheel_radius}</wheelDiameter>
+            <maxWheelTorque>10</maxWheelTorque>
+            <maxWheelAcceleration>1.0</maxWheelAcceleration>
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <robotBaseFrame>base_footprint</robotBaseFrame>
+            <publishWheelTF>true</publishWheelTF>
+            <publishOdomTF>true</publishOdomTF>
+            <updateRate>50.0</updateRate>
+        </plugin>
+    </gazebo>
+
+    <!-- ========================================= -->
+    <!-- Gazebo 关节状态发布插件 -->
+    <!-- ========================================= -->
+    <gazebo>
+        <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+            <jointName>left_wheel2_link, right_wheel2_link, front_wheel2_link, back_wheel2_link</jointName>
+            <updateRate>50.0</updateRate>
+        </plugin>
+    </gazebo>
+
+</robot>

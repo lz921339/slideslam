@@ -1,0 +1,25 @@
+<!--
+    组合小车底盘与摄像头与雷达 - Gazebo仿真版本
+    包含完整的物理属性和传感器插件配置
+-->
+<robot name="mycar" xmlns:xacro="http://wiki.ros.org/xacro">
+    
+    <!-- ========================================= -->
+    <!-- 包含各个组件文件 -->
+    <!-- ========================================= -->
+    
+    <!-- 基础定义和宏 -->
+    <xacro:include filename="head.xacro" />
+    
+    <!-- 小车底盘 -->
+    <xacro:include filename="robot.urdf.xacro" />
+    
+    <!-- 摄像头 -->
+    <xacro:include filename="demo06_car_camera.xacro" />
+    
+    <!-- 雷达 -->
+    <xacro:include filename="demo07_car_laser.xacro" />
+
+    <xacro:include filename="gazebo/move.xacro" />
+
+</robot>

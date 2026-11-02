@@ -1,0 +1,17 @@
+<launch>
+  <!-- Reuse the original SLOAM node, with parameters scoped to one Gazebo car. -->
+  <include file="$(find sloam)/launch/decentralized_sloam.launch">
+    <arg name="enable_rviz" value="false"/>
+    <arg name="hostRobot_ID" value="0"/>
+    <arg name="odom_topic" value="/robot0/odom"/>
+    <arg name="turn_off_intra_loop_closure" value="true"/>
+    <arg name="turn_off_inter_loop_closure" value="true"/>
+  </include>
+
+  <param name="/sloam/number_of_robots" value="1"/>
+  <param name="/sloam/map_frame_id" value="world"/>
+  <param name="/sloam/odom_frame_id" value="odom"/>
+  <param name="/sloam/robot_frame_id" value="base_footprint"/>
+  <param name="/sloam/semantic_meas_delay_tolerance" value="10.0"/>
+  <param name="/sloam/publish_tf" value="false"/>
+</launch>

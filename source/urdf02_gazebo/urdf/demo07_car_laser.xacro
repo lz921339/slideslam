@@ -1,0 +1,174 @@
+<!--
+    小车底盘添加雷达 - Gazebo仿真版本
+-->
+<robot name="my_laser" xmlns:xacro="http://wiki.ros.org/xacro">
+
+    <!-- ========================================= -->
+    <!-- 雷达支架参数 -->
+    <!-- ========================================= -->
+    <xacro:property name="support_length" value="0.15" /> <!-- 支架长度 -->
+    <xacro:property name="support_radius" value="0.01" /> <!-- 支架半径 -->
+    <xacro:property name="support_x" value="0.0" /> <!-- 支架安装的x坐标 -->
+    <xacro:property name="support_y" value="0.0" /> <!-- 支架安装的y坐标 -->
+    <xacro:property name="support_z" value="${head_height/ 2 + support_length / 2}" /> <!-- 支架安装的z坐标 -->
+    
+    <!-- 支架质量和惯性参数 -->
+    <xacro:property name="support_mass" value="0.1" /> <!-- 支架质量 kg -->
+
+    <!-- ========================================= -->
+    <!-- 雷达参数 -->
+    <!-- ========================================= -->
+    <xacro:property name="laser_length" value="0.05" /> <!-- 雷达长度 -->
+    <xacro:property name="laser_radius" value="0.03" /> <!-- 雷达半径 -->
+    <xacro:property name="laser_x" value="0.0" /> <!-- 雷达安装的x坐标 -->
+    <xacro:property name="laser_y" value="0.0" /> <!-- 雷达安装的y坐标 -->
+    <xacro:property name="laser_z" value="${support_length / 2 + laser_length / 2}" /> <!-- 雷达安装的z坐标 -->
+    
+    <!-- 雷达质量和惯性参数 -->
+    <xacro:property name="laser_mass" value="0.2" /> <!-- 雷达质量 kg -->
+
+    <!-- ========================================= -->
+    <!-- 材质定义 -->
+    <!-- ========================================= -->
+    <material name="green">
+        <color rgba="0.8 0.2 0.0 0.8"/>
+    </material>
+    
+    <material name="black">
+        <color rgba="0.0 0.0 0.0 1.0"/>
+    </material>
+
+    <!-- ========================================= -->
+    <!-- 雷达支架 Link 和 Joint -->
+    <!-- ========================================= -->
+    <link name="support">
+        <!-- 可视化 -->
+        <visual>
+            <geometry>
+                <cylinder radius="${support_radius}" length="${support_length}" />
+            </geometry>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <material name="green" />
+        </visual>
+        
+        <!-- 碰撞检测 - Gazebo必需 -->
+        <collision>
+            <geometry>
+                <cylinder radius="${support_radius}" length="${support_length}" />
+            </geometry>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        </collision>
+        
+        <!-- 惯性属性 - Gazebo物理仿真必需 -->
+        <inertial>
+            <mass value="${support_mass}" />
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <!-- 圆柱体惯性公式: Ixx = Iyy = m*(3*r^2 + h^2)/12, Izz = m*r^2/2 -->
+            <inertia ixx="${support_mass * (3 * support_radius * support_radius + support_length * support_length) / 12}" 
+                     ixy="0.0" 
+                     ixz="0.0"
+                     iyy="${support_mass * (3 * support_radius * support_radius + support_length * support_length) / 12}" 
+                     iyz="0.0"
+                     izz="${support_mass * support_radius * support_radius / 2}" />
+        </inertial>
+    </link>
+
+    <joint name="support2base_link" type="fixed">
+        <parent link="head_link" />
+        <child link="support" />
+        <origin xyz="${support_x} ${support_y} ${support_z}" />
+    </joint>
+
+    <!-- ========================================= -->
+    <!-- 雷达 Link 和 Joint -->
+    <!-- ========================================= -->
+    <link name="laser">
+        <!-- 可视化 -->
+        <visual>
+            <geometry>
+                <cylinder radius="${laser_radius}" length="${laser_length}" />
+            </geometry>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <material name="black" />
+        </visual>
+        
+        <!-- 碰撞检测 - Gazebo必需 -->
+        <collision>
+            <geometry>
+                <cylinder radius="${laser_radius}" length="${laser_length}" />
+            </geometry>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        </collision>
+        
+        <!-- 惯性属性 - Gazebo物理仿真必需 -->
+        <inertial>
+            <mass value="${laser_mass}" />
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <!-- 圆柱体惯性公式 -->
+            <inertia ixx="${laser_mass * (3 * laser_radius * laser_radius + laser_length * laser_length) / 12}" 
+                     ixy="0.0" 
+                     ixz="0.0"
+                     iyy="${laser_mass * (3 * laser_radius * laser_radius + laser_length * laser_length) / 12}" 
+                     iyz="0.0"
+                     izz="${laser_mass * laser_radius * laser_radius / 2}" />
+        </inertial>
+    </link>
+
+    <joint name="laser2support" type="fixed">
+        <parent link="support" />
+        <child link="laser" />
+        <origin xyz="${laser_x} ${laser_y} ${laser_z}" />
+    </joint>
+
+    <!-- ========================================= -->
+    <!-- Gazebo 颜色和物理属性设置 -->
+    <!-- ========================================= -->
+    
+    <!-- 支架在Gazebo中的颜色 -->
+    <gazebo reference="support">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    
+    <!-- 雷达在Gazebo中的颜色 -->
+    <gazebo reference="laser">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <!-- ========================================= -->
+    <!-- Gazebo 雷达传感器插件 -->
+    <!-- ========================================= -->
+    <gazebo reference="laser">
+        <sensor type="ray" name="laser_sensor">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>true</visualize> <!-- 在Gazebo中可视化激光射线 -->
+            <update_rate>1</update_rate> <!-- 更新频率 Hz -->
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>360</samples> <!-- 扫描采样点数 -->
+                        <resolution>1</resolution> <!-- 角度分辨率 -->
+                        <min_angle>-3.14159</min_angle> <!-- 最小角度 -π -->
+                        <max_angle>3.14159</max_angle> <!-- 最大角度 π -->
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.10</min> <!-- 最小距离 0.1m -->
+                    <max>30.0</max> <!-- 最大距离 30m -->
+                    <resolution>0.01</resolution> <!-- 距离分辨率 -->
+                </range>
+                <noise>
+                    <type>gaussian</type> <!-- 高斯噪声 -->
+                    <mean>0.0</mean>
+                    <stddev>0.01</stddev> <!-- 标准差 -->
+                </noise>
+            </ray>
+            
+            <!-- ROS接口插件 -->
+            <plugin name="gazebo_ros_laser" filename="libgazebo_ros_laser.so">
+                <topicName>/scan</topicName> <!-- ROS话题名称 -->
+                <frameName>laser</frameName> <!-- TF坐标系名称 -->
+            </plugin>
+        </sensor>
+    </gazebo>
+
+</robot>

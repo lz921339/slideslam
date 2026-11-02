@@ -1,0 +1,43 @@
+<launch>
+  <!-- One-command launch for the complete single-car RGB-D chain. -->
+  <arg name="gui" default="false" />
+  <arg name="rviz" default="true" />
+  <arg name="device" default="0" />
+  <arg name="require_cuda" default="true" />
+  <arg name="car_x" default="2.0" />
+  <arg name="car_y" default="8.0" />
+  <arg name="car_z" default="0.25" />
+  <arg name="yaw" default="0.0" />
+  <arg name="world" default="$(find urdf02_gazebo)/worlds/box_house.world" />
+
+  <include file="$(find urdf02_gazebo)/launch/single_car_slideslam.launch">
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="car_x" value="$(arg car_x)" />
+    <arg name="car_y" value="$(arg car_y)" />
+    <arg name="car_z" value="$(arg car_z)" />
+    <arg name="yaw" value="$(arg yaw)" />
+    <arg name="world" value="$(arg world)" />
+  </include>
+
+  <include file="$(find object_modeller)/launch/rgb_segmentation_single_car_sim.launch">
+    <arg name="odom_topic" value="/robot0/odom" />
+    <arg name="desired_rate" value="1.0" />
+    <arg name="device" value="$(arg device)" />
+    <arg name="require_cuda" value="$(arg require_cuda)" />
+  </include>
+
+  <include file="$(find scan2shape_launch)/launch/process_cloud_node_single_car_sim.launch">
+    <arg name="odom_topic" value="/robot0/odom" />
+  </include>
+
+  <include file="$(find object_modeller)/launch/sync_semantic_measurements.launch">
+    <arg name="odom_topic" value="/robot0/odom" />
+    <arg name="robot_name" value="robot0" />
+  </include>
+
+  <include file="$(find sloam)/launch/single_car_rgbd_sim.launch" />
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="single_car_rviz"
+        output="screen"
+        args="-d $(find urdf02_gazebo)/config/single_car_slideslam.rviz" />
+</launch>

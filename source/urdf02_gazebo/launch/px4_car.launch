@@ -1,0 +1,55 @@
+<launch>
+    <!-- PX4 SITL, MAVROS and Gazebo must already be running. -->
+    <arg name="car_x" default="1.0" />
+    <arg name="car_y" default="0.0" />
+    <arg name="car_z" default="0.25" />
+    <arg name="auto_arm" default="false" />
+    <arg name="target_x" default="0.0" />
+    <arg name="target_y" default="0.0" />
+    <arg name="target_z" default="2.0" />
+
+    <param name="robot_description"
+      command="$(find xacro)/xacro $(find urdf02_gazebo)/urdf/car.xacro" />
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher"
+          name="car_robot_state_publisher" output="screen" />
+
+    <!-- Wait for PX4 Gazebo and retry until the unchanged car URDF is present. -->
+    <node pkg="urdf02_gazebo" type="spawn_car.py" name="spawn_px4_companion_car"
+          output="screen" required="true">
+        <param name="model_name" value="car" />
+        <param name="robot_description_param" value="/robot_description" />
+        <param name="x" value="$(arg car_x)" />
+        <param name="y" value="$(arg car_y)" />
+        <param name="z" value="$(arg car_z)" />
+    </node>
+
+    <!-- Existing bidirectional telemetry, now reading PX4 odometry directly. -->
+    <node pkg="urdf02_gazebo" type="car_drone_communication.py"
+          name="car_drone_communication" output="screen">
+        <param name="car_odom_topic" value="/robot0/odom" />
+        <param name="drone_odom_topic" value="/mavros/local_position/odom" />
+    </node>
+
+      <!-- Publish Gazebo truth and derive the real world-to-odom transform. -->
+      <node pkg="urdf02_gazebo" type="ground_truth_odom.py"
+              name="ground_truth_odom" output="screen">
+            <param name="model_name" value="car" />
+            <param name="world_frame" value="world" />
+            <param name="odom_frame" value="odom" />
+            <param name="base_frame" value="base_footprint" />
+      </node>
+
+    <!-- Active when the PX4 iris model contains the configured 3D lidar. -->
+    <node pkg="urdf02_gazebo" type="drone_pointcloud2_bridge.py"
+          name="drone_pointcloud2_bridge" output="screen" />
+
+    <!-- Continuous Offboard setpoints; automatic arming is disabled by default. -->
+    <node pkg="urdf02_gazebo" type="px4_offboard_control.py"
+          name="px4_offboard_control" output="screen">
+        <param name="auto_arm" value="$(arg auto_arm)" />
+        <param name="target_x" value="$(arg target_x)" />
+        <param name="target_y" value="$(arg target_y)" />
+        <param name="target_z" value="$(arg target_z)" />
+    </node>
+</launch>

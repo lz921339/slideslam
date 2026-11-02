@@ -1,0 +1,28 @@
+<launch>
+  <arg name="odom_topic" default="/robot0/odom"/>
+  <arg name="desired_rate" default="1.0"/>
+  <arg name="device" default="0"/>
+  <arg name="require_cuda" default="true"/>
+
+  <node pkg="object_modeller" type="detect.py" name="rgb_sem_segmentation"
+        ns="robot0" output="screen">
+    <param name="sim" value="true"/>
+    <param name="camera_frame" value="camera_optical_frame"/>
+    <param name="desired_rate" value="$(arg desired_rate)"/>
+    <param name="device" value="$(arg device)"/>
+    <param name="require_cuda" value="$(arg require_cuda)"/>
+    <!-- Synthetic Gazebo RGB is less photorealistic than the training data. -->
+    <param name="confidence_threshold" value="0.25"/>
+    <param name="rgb_topic" value="/robot0/camera/color/image_raw"/>
+    <param name="depth_topic" value="/robot0/camera/aligned_depth_to_color/image_raw"/>
+    <param name="aligned_depth_topic" value="/robot0/camera/aligned_depth_to_color/image_raw"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="sync_odom_measurements" value="true"/>
+    <param name="sync_pc_odom_topic" value="/robot0/sem_detection/sync_pc_odom"/>
+    <param name="pc_topic" value="/robot0/sem_detection/pointcloud"/>
+    <param name="fx" value="381.36246688113556"/>
+    <param name="fy" value="381.36246688113556"/>
+    <param name="cx" value="319.5"/>
+    <param name="cy" value="239.5"/>
+  </node>
+</launch>

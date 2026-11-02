@@ -1,0 +1,444 @@
+<?xml version="1.0"?>
+<robot name="mycar" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- 参数定义区 -->
+    <xacro:property name="base_length" value="0.65"/>
+    <xacro:property name="base_width" value="0.32"/>
+    <xacro:property name="base_height" value="0.12"/>
+    <xacro:property name="base_link_z_offset" value="0.13"/>
+    <xacro:property name="base_mass" value="3.5"/>
+
+    <xacro:property name="rail_width" value="0.04"/>
+    <xacro:property name="rail_height" value="0.015"/>
+    <xacro:property name="rail_z_offset" value="0.07"/>
+
+    <xacro:property name="bumper_size" value="0.06 0.06 0.03"/>
+
+    <xacro:property name="wheel_radius" value="0.11"/>
+    <xacro:property name="wheel_length" value="0.045"/>
+    <xacro:property name="wheel_y_offset" value="0.175"/>
+    <xacro:property name="wheel_x_offset_front" value="0.26"/>
+    <xacro:property name="wheel_x_offset_rear" value="-0.26"/>
+    <xacro:property name="wheel_z_offset" value="-0.11"/>
+    <xacro:property name="wheel_mass" value="0.35"/>
+
+    <xacro:property name="spring_length" value="0.09"/>
+    <xacro:property name="spring_radius" value="0.012"/>
+    <!-- 底盘下表面到轮心转轴的悬挂连接尺寸 -->
+    <xacro:property name="suspension_width" value="0.025"/>
+    <xacro:property name="suspension_height" value="${-wheel_z_offset - base_height/2}"/>
+    <xacro:property name="suspension_z" value="${(wheel_z_offset - base_height/2)/2}"/>
+    <xacro:property name="suspension_y" value="${base_width/2 - suspension_width/2}"/>
+
+    <!-- 新增：为 move.xacro 提供 base_radius -->
+    <xacro:property name="base_radius" value="${wheel_y_offset}"/>
+
+    <!-- 材质颜色宏 -->
+    <xacro:macro name="baselink_color">
+        <material name="baselink_color">
+            <color rgba="0.98 0.98 0.98 1"/>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="wheel_color">
+        <material name="wheel_color">
+            <color rgba="0.05 0.05 0.05 1"/>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="spring_color">
+        <material name="spring_color">
+            <color rgba="0.95 0.05 0.05 1"/>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="rail_color">
+        <material name="rail_color">
+            <color rgba="0.75 0.78 0.82 1"/>
+        </material>
+    </xacro:macro>
+    <xacro:macro name="bumper_color">
+        <material name="bumper_color">
+            <color rgba="0.1 0.1 0.1 1"/>
+        </material>
+    </xacro:macro>
+
+    <!-- 长方体惯性宏 -->
+    <xacro:macro name="box_inertial" params="mass x y z">
+        <inertial>
+            <mass value="${mass}"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="${mass*(y*y+z*z)/12}" ixy="0" ixz="0"
+                     iyy="${mass*(x*x+z*z)/12}" iyz="0"
+                     izz="${mass*(x*x+y*y)/12}"/>
+        </inertial>
+    </xacro:macro>
+
+    <!-- 圆柱体惯性宏 -->
+    <xacro:macro name="cylinder_inertial" params="mass radius length">
+        <inertial>
+            <mass value="${mass}"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="${mass*(3*radius*radius+length*length)/12}" ixy="0" ixz="0"
+                     iyy="${mass*(3*radius*radius+length*length)/12}" iyz="0"
+                     izz="${mass*radius*radius/2}"/>
+        </inertial>
+    </xacro:macro>
+
+    <!-- 车轮通用宏（含传动器） -->
+    <xacro:macro name="wheel_link" params="name prefix joint_name">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+                </geometry>
+                <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+                <xacro:wheel_color/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+                </geometry>
+                <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+            </collision>
+            <xacro:cylinder_inertial mass="${wheel_mass}" radius="${wheel_radius}" length="${wheel_length}"/>
+        </link>
+
+        <transmission name="${joint_name}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${joint_name}">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${joint_name}_motor">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+
+    <!-- 地面基准连杆 -->
+    <link name="base_footprint">
+        <visual>
+            <geometry>
+                <sphere radius="0.001"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <!-- 底盘主体连杆 -->
+    <link name="base_link">
+        <visual name="body_main">
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <xacro:baselink_color/>
+        </visual>
+        <visual name="rail_left">
+            <geometry>
+                <box size="${base_length} ${rail_width} ${rail_height}"/>
+            </geometry>
+            <origin xyz="0 ${base_width/2 - rail_width/2} ${rail_z_offset}"/>
+            <xacro:rail_color/>
+        </visual>
+        <visual name="rail_right">
+            <geometry>
+                <box size="${base_length} ${rail_width} ${rail_height}"/>
+            </geometry>
+            <origin xyz="0 -${base_width/2 - rail_width/2} ${rail_z_offset}"/>
+            <xacro:rail_color/>
+        </visual>
+        <visual name="bumper_fl">
+            <geometry><box size="${bumper_size}"/></geometry>
+            <origin xyz="${base_length/2-0.03} ${base_width/2-0.03} ${base_height/2-0.015}"/>
+            <xacro:bumper_color/>
+        </visual>
+        <visual name="bumper_fr">
+            <geometry><box size="${bumper_size}"/></geometry>
+            <origin xyz="${base_length/2-0.03} -${base_width/2-0.03} ${base_height/2-0.015}"/>
+            <xacro:bumper_color/>
+        </visual>
+        <visual name="bumper_rl">
+            <geometry><box size="${bumper_size}"/></geometry>
+            <origin xyz="-${base_length/2-0.03} ${base_width/2-0.03} ${base_height/2-0.015}"/>
+            <xacro:bumper_color/>
+        </visual>
+        <visual name="bumper_rr">
+            <geometry><box size="${bumper_size}"/></geometry>
+            <origin xyz="-${base_length/2-0.03} -${base_width/2-0.03} ${base_height/2-0.015}"/>
+            <xacro:bumper_color/>
+        </visual>
+        <visual name="spring_fl">
+            <geometry><cylinder radius="${spring_radius}" length="${spring_length}"/></geometry>
+            <origin xyz="${wheel_x_offset_front} ${wheel_y_offset} ${wheel_z_offset}" rpy="1.5708 0 0"/>
+            <xacro:spring_color/>
+        </visual>
+        <visual name="spring_fr">
+            <geometry><cylinder radius="${spring_radius}" length="${spring_length}"/></geometry>
+            <origin xyz="${wheel_x_offset_front} -${wheel_y_offset} ${wheel_z_offset}" rpy="1.5708 0 0"/>
+            <xacro:spring_color/>
+        </visual>
+        <visual name="spring_rl">
+            <geometry><cylinder radius="${spring_radius}" length="${spring_length}"/></geometry>
+            <origin xyz="${wheel_x_offset_rear} ${wheel_y_offset} ${wheel_z_offset}" rpy="1.5708 0 0"/>
+            <xacro:spring_color/>
+        </visual>
+        <visual name="spring_rr">
+            <geometry><cylinder radius="${spring_radius}" length="${spring_length}"/></geometry>
+            <origin xyz="${wheel_x_offset_rear} -${wheel_y_offset} ${wheel_z_offset}" rpy="1.5708 0 0"/>
+            <xacro:spring_color/>
+        </visual>
+        <!-- 四个悬挂支架把底盘与轮心转轴连接起来 -->
+        <visual name="suspension_fl">
+            <geometry><box size="${suspension_width} ${suspension_width} ${suspension_height}"/></geometry>
+            <origin xyz="${wheel_x_offset_front} ${suspension_y} ${suspension_z}"/>
+            <xacro:spring_color/>
+        </visual>
+        <visual name="suspension_fr">
+            <geometry><box size="${suspension_width} ${suspension_width} ${suspension_height}"/></geometry>
+            <origin xyz="${wheel_x_offset_front} -${suspension_y} ${suspension_z}"/>
+            <xacro:spring_color/>
+        </visual>
+        <visual name="suspension_rl">
+            <geometry><box size="${suspension_width} ${suspension_width} ${suspension_height}"/></geometry>
+            <origin xyz="${wheel_x_offset_rear} ${suspension_y} ${suspension_z}"/>
+            <xacro:spring_color/>
+        </visual>
+        <visual name="suspension_rr">
+            <geometry><box size="${suspension_width} ${suspension_width} ${suspension_height}"/></geometry>
+            <origin xyz="${wheel_x_offset_rear} -${suspension_y} ${suspension_z}"/>
+            <xacro:spring_color/>
+        </visual>
+        <!-- 雷达安装柱：连接底盘上表面与车顶雷达 -->
+        <visual name="car_laser_mount">
+            <geometry><cylinder radius="0.025" length="0.035"/></geometry>
+            <origin xyz="0 0 ${base_height/2 + 0.0175}"/>
+            <material name="sensor_mount_color"><color rgba="0.25 0.25 0.28 1"/></material>
+        </visual>
+        <!-- RGB-D相机支架：连接底盘与前向相机 -->
+        <visual name="car_camera_mount_vertical">
+            <geometry><box size="0.035 0.07 0.07"/></geometry>
+            <origin xyz="${base_length/2 - 0.10} 0 ${base_height/2 + 0.035}"/>
+            <material name="sensor_mount_color"/>
+        </visual>
+        <visual name="car_camera_mount_horizontal">
+            <geometry><box size="0.08 0.07 0.025"/></geometry>
+            <origin xyz="${base_length/2 - 0.06} 0 ${base_height/2 + 0.07}"/>
+            <material name="sensor_mount_color"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </collision>
+        <xacro:box_inertial mass="${base_mass}" x="${base_length}" y="${base_width}" z="${base_height}"/>
+    </link>
+
+    <joint name="link2footprint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 ${base_link_z_offset}"/>
+    </joint>
+
+    <!-- 四轮驱动关节 -->
+    <xacro:wheel_link name="left_wheel" prefix="left" joint_name="left2_link"/>
+    <joint name="left2_link" type="continuous">
+        <parent link="base_link"/>
+        <child link="left_wheel"/>
+        <origin xyz="${wheel_x_offset_front} ${wheel_y_offset} ${wheel_z_offset}"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <xacro:wheel_link name="right_wheel" prefix="right" joint_name="right2_link"/>
+    <joint name="right2_link" type="continuous">
+        <parent link="base_link"/>
+        <child link="right_wheel"/>
+        <origin xyz="${wheel_x_offset_front} -${wheel_y_offset} ${wheel_z_offset}"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <xacro:wheel_link name="left_wheel1" prefix="left1" joint_name="left12_link"/>
+    <joint name="left12_link" type="continuous">
+        <parent link="base_link"/>
+        <child link="left_wheel1"/>
+        <origin xyz="${wheel_x_offset_rear} ${wheel_y_offset} ${wheel_z_offset}"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <xacro:wheel_link name="right_wheel1" prefix="right1" joint_name="right12_link"/>
+    <joint name="right12_link" type="continuous">
+        <parent link="base_link"/>
+        <child link="right_wheel1"/>
+        <origin xyz="${wheel_x_offset_rear} -${wheel_y_offset} ${wheel_z_offset}"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <!-- 车顶二维激光雷达 -->
+    <link name="car_laser_link">
+        <visual>
+            <geometry><cylinder radius="0.055" length="0.045"/></geometry>
+            <material name="car_laser_color"><color rgba="0.1 0.1 0.1 1"/></material>
+        </visual>
+        <collision>
+            <geometry><cylinder radius="0.055" length="0.045"/></geometry>
+        </collision>
+        <xacro:cylinder_inertial mass="0.12" radius="0.055" length="0.045"/>
+    </link>
+    <joint name="car_laser_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="car_laser_link"/>
+        <origin xyz="0 0 ${base_height/2 + 0.045}"/>
+    </joint>
+
+    <!-- 小车前向 RGB-D 相机 -->
+    <link name="car_rgbd_link">
+        <visual>
+            <geometry><box size="0.07 0.12 0.06"/></geometry>
+            <material name="car_camera_color"><color rgba="0.08 0.08 0.12 1"/></material>
+        </visual>
+        <collision><geometry><box size="0.07 0.12 0.06"/></geometry></collision>
+        <xacro:box_inertial mass="0.18" x="0.07" y="0.12" z="0.06"/>
+    </link>
+    <joint name="car_rgbd_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="car_rgbd_link"/>
+        <origin xyz="${base_length/2 - 0.06} 0 ${base_height/2 + 0.08}"/>
+    </joint>
+
+    <!-- ========== Gazebo 配置 ========== -->
+    <gazebo>
+        <plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">
+            <robotNamespace>/car</robotNamespace>
+            <leftFrontJoint>left2_link</leftFrontJoint>
+            <rightFrontJoint>right2_link</rightFrontJoint>
+            <leftRearJoint>left12_link</leftRearJoint>
+            <rightRearJoint>right12_link</rightRearJoint>
+            <wheelDiameter>${2 * wheel_radius}</wheelDiameter>
+            <wheelSeparation>${2 * wheel_y_offset}</wheelSeparation>
+            <torque>20</torque>
+            <commandTopic>/cmd_vel</commandTopic>
+            <odometryTopic>/robot0/odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <robotBaseFrame>base_footprint</robotBaseFrame>
+            <broadcastTF>true</broadcastTF>
+            <updateRate>50.0</updateRate>
+        </plugin>
+    </gazebo>
+
+    <gazebo reference="car_laser_link">
+        <material>Gazebo/Black</material>
+        <sensor name="car_laser" type="ray">
+            <pose>0 0 0 0 0 0</pose>
+            <always_on>true</always_on>
+            <visualize>true</visualize>
+            <update_rate>15</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>360</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.14159</min_angle>
+                        <max_angle>3.14159</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.001</min>
+                    <max>12.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+                <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
+            </ray>
+            <plugin name="car_laser_controller" filename="libgazebo_ros_laser.so">
+                <topicName>/car/scan</topicName>
+                <frameName>car_laser_link</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <gazebo reference="car_rgbd_link">
+        <material>Gazebo/Blue</material>
+        <sensor type="depth" name="car_rgbd_sensor">
+            <pose>0 0 0 0 0 0</pose>
+            <always_on>true</always_on>
+            <visualize>true</visualize>
+            <update_rate>30.0</update_rate>
+            <camera>
+                <horizontal_fov>1.3962634</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+            </camera>
+            <plugin name="car_rgbd_controller" filename="libgazebo_ros_safe_rgbd.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>30.0</updateRate>
+                <cameraName>/robot0/camera</cameraName>
+                <imageTopicName>color/image_raw</imageTopicName>
+                <cameraInfoTopicName>color/camera_info</cameraInfoTopicName>
+                <depthImageTopicName>aligned_depth_to_color/image_raw</depthImageTopicName>
+                <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+                <pointCloudTopicName>depth/points</pointCloudTopicName>
+                <frameName>camera_optical_frame</frameName>
+                <pointCloudCutoff>0.08</pointCloudCutoff>
+                <pointCloudCutoffMax>10.0</pointCloudCutoffMax>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <link name="camera_optical_frame"/>
+    <joint name="camera_optical_joint" type="fixed">
+        <parent link="car_rgbd_link"/>
+        <child link="camera_optical_frame"/>
+        <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+    </joint>
+
+    <!-- 各连杆材质 -->
+    <gazebo reference="base_link">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="left_wheel">
+        <material>Gazebo/DarkGrey</material>
+        <mu1>1.4</mu1>
+        <mu2>1.4</mu2>
+        <kp>1000000.0</kp>
+        <kd>120.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxVel>2.0</maxVel>
+    </gazebo>
+    <gazebo reference="right_wheel">
+        <material>Gazebo/DarkGrey</material>
+        <mu1>1.4</mu1>
+        <mu2>1.4</mu2>
+        <kp>1000000.0</kp>
+        <kd>120.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxVel>2.0</maxVel>
+    </gazebo>
+    <gazebo reference="left_wheel1">
+        <material>Gazebo/DarkGrey</material>
+        <mu1>1.4</mu1>
+        <mu2>1.4</mu2>
+        <kp>1000000.0</kp>
+        <kd>120.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxVel>2.0</maxVel>
+    </gazebo>
+    <gazebo reference="right_wheel1">
+        <material>Gazebo/DarkGrey</material>
+        <mu1>1.4</mu1>
+        <mu2>1.4</mu2>
+        <kp>1000000.0</kp>
+        <kd>120.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxVel>2.0</maxVel>
+    </gazebo>
+
+</robot>

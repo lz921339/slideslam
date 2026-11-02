@@ -1,0 +1,157 @@
+<!--
+    摄像头相关的 xacro 文件 - Gazebo仿真版本
+    包含碰撞、惯性属性和摄像头传感器插件
+-->
+<robot name="my_camera" xmlns:xacro="http://wiki.ros.org/xacro">
+
+    <!-- ========================================= -->
+    <!-- 摄像头参数定义 -->
+    <!-- ========================================= -->
+    <xacro:property name="camera_length" value="0.01" /> <!-- 摄像头长度(x) -->
+    <xacro:property name="camera_width" value="0.025" /> <!-- 摄像头宽度(y) -->
+    <xacro:property name="camera_height" value="0.025" /> <!-- 摄像头高度(z) -->
+    <xacro:property name="camera_x" value="0.07" /> <!-- 摄像头安装的x坐标 -->
+    <xacro:property name="camera_y" value="0.0" /> <!-- 摄像头安装的y坐标 -->
+    <xacro:property name="camera_z" value="${head_height/ 2 + camera_height / 2}" /> <!-- 摄像头安装的z坐标 -->
+    <xacro:property name="camera_mass" value="0.05" /> <!-- 摄像头质量 kg -->
+
+    <!-- ========================================= -->
+    <!-- 材质定义 -->
+    <!-- ========================================= -->
+    <material name="blue">
+        <color rgba="0 0 1 1"/>
+    </material>
+
+    <!-- ========================================= -->
+    <!-- 惯性矩阵计算宏 - 长方体 -->
+    <!-- ========================================= -->
+    <xacro:macro name="camera_box_inertial" params="mass x y z">
+        <inertial>
+            <mass value="${mass}" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <!-- 长方体惯性公式: Ixx = m*(y^2+z^2)/12, Iyy = m*(x^2+z^2)/12, Izz = m*(x^2+y^2)/12 -->
+            <inertia ixx="${mass * (y*y + z*z) / 12}" 
+                     ixy="0" 
+                     ixz="0"
+                     iyy="${mass * (x*x + z*z) / 12}" 
+                     iyz="0"
+                     izz="${mass * (x*x + y*y) / 12}" />
+        </inertial>
+    </xacro:macro>
+
+    <!-- ========================================= -->
+    <!-- 摄像头 Link 和 Joint -->
+    <!-- ========================================= -->
+    <link name="camera">
+        <!-- 可视化 -->
+        <visual>
+            <geometry>
+                <box size="${camera_length} ${camera_width} ${camera_height}" />
+            </geometry>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <material name="blue" />
+        </visual>
+        
+        <!-- 碰撞检测 - Gazebo必需 -->
+        <collision>
+            <geometry>
+                <box size="${camera_length} ${camera_width} ${camera_height}" />
+            </geometry>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        </collision>
+        
+        <!-- 惯性属性 - Gazebo物理仿真必需 -->
+        <xacro:camera_box_inertial mass="${camera_mass}" 
+                                   x="${camera_length}" 
+                                   y="${camera_width}" 
+                                   z="${camera_height}" />
+    </link>
+
+    <joint name="camera2base_link" type="fixed">
+        <parent link="head_link" />
+        <child link="camera" />
+        <origin xyz="${camera_x} ${camera_y} ${camera_z}" />
+    </joint>
+
+    <!-- ========================================= -->
+    <!-- 摄像头光学坐标系 Link -->
+    <!-- ========================================= -->
+    <link name="camera_optical_frame"/>
+    
+    <joint name="camera_optical_joint" type="fixed">
+        <parent link="camera"/>
+        <child link="camera_optical_frame"/>
+        <!-- 光学坐标系转换: x前->z前, y左->x左, z上->y下 -->
+        <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+    </joint>
+
+    <!-- ========================================= -->
+    <!-- Gazebo 材质设置 -->
+    <!-- ========================================= -->
+    <gazebo reference="camera">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+
+    <!-- ========================================= -->
+    <!-- Gazebo 摄像头传感器插件 -->
+    <!-- ========================================= -->
+    <gazebo reference="camera">
+        <sensor type="depth" name="camera_sensor">
+            <!-- 传感器姿态 -->
+            <pose>0 0 0 0 0 0</pose>
+            
+            <!-- 更新频率 -->
+            <update_rate>30.0</update_rate> <!-- Hz -->
+            
+            <!-- 摄像头参数 -->
+            <camera>
+                <!-- 分辨率 -->
+                <horizontal_fov>1.3962634</horizontal_fov> <!-- 水平视场角 80度 -->
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format> <!-- 图像格式 -->
+                </image>
+                
+                <!-- 裁剪距离 -->
+                <clip>
+                    <near>0.02</near> <!-- 近裁剪面 0.02m -->
+                    <far>300</far> <!-- 远裁剪面 300m -->
+                </clip>
+                
+                <!-- 噪声模型 -->
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+            </camera>
+            
+            <!-- ROS接口插件 -->
+            <plugin name="camera_controller" filename="libgazebo_ros_safe_rgbd.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>30.0</updateRate>
+                
+                <!-- ROS话题名称 -->
+                <cameraName>robot0/camera</cameraName> <!-- 话题前缀 -->
+                <imageTopicName>color/image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName> <!-- 相机信息话题 -->
+                <depthImageTopicName>depth/image_rect_raw</depthImageTopicName>
+                <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+                <pointCloudTopicName>depth/points</pointCloudTopicName>
+                
+                <!-- TF坐标系 -->
+                <frameName>camera_optical_frame</frameName>
+                
+                <!-- 其他参数 -->
+                <hackBaseline>0.07</hackBaseline> <!-- 基线距离，用于立体相机 -->
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+</robot>

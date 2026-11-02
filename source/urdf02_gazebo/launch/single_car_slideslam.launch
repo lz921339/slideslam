@@ -1,0 +1,32 @@
+<launch>
+  <!-- Gazebo car and sensor inputs only; no bag, PX4, or SlideSLAM. -->
+  <arg name="gui" default="false" />
+  <arg name="world" default="$(find urdf02_gazebo)/worlds/box_house.world" />
+  <arg name="car_x" default="0.0" />
+  <arg name="car_y" default="0.0" />
+  <arg name="car_z" default="0.25" />
+  <arg name="yaw" default="0.0" />
+
+  <param name="/use_sim_time" value="true" />
+  <param name="robot_description"
+         command="$(find xacro)/xacro $(find urdf02_gazebo)/urdf/car.xacro" />
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world)" />
+    <arg name="gui" value="$(arg gui)" />
+  </include>
+
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_car" output="screen"
+        args="-urdf -model car -param robot_description -x $(arg car_x) -y $(arg car_y) -z $(arg car_z) -Y $(arg yaw)" />
+  <node pkg="robot_state_publisher" type="robot_state_publisher"
+        name="car_robot_state_publisher" output="screen" />
+
+  <!-- Ground truth is for evaluation only; do not remap it to /robot0/odom. -->
+  <node pkg="urdf02_gazebo" type="ground_truth_odom.py"
+        name="car_ground_truth_odom" output="screen">
+    <param name="model_name" value="car" />
+    <param name="world_frame" value="world" />
+    <param name="odom_frame" value="odom" />
+    <param name="base_frame" value="base_footprint" />
+  </node>
+</launch>

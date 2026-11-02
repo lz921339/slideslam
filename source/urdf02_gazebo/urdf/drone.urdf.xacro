@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<robot name="drone" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:property name="arm_length" value="0.62" />
+    <xacro:property name="arm_width" value="0.045" />
+    <xacro:property name="arm_height" value="0.025" />
+    <xacro:property name="rotor_radius" value="0.105" />
+
+    <link name="drone_base_link">
+        <visual name="body">
+            <geometry><box size="0.28 0.20 0.09" /></geometry>
+            <material name="drone_blue"><color rgba="0.05 0.25 0.85 1" /></material>
+        </visual>
+        <visual name="arm_x">
+            <origin rpy="0 0 0.7854" />
+            <geometry><box size="${arm_length} ${arm_width} ${arm_height}" /></geometry>
+            <material name="arm_dark"><color rgba="0.12 0.12 0.12 1" /></material>
+        </visual>
+        <visual name="arm_y">
+            <origin rpy="0 0 -0.7854" />
+            <geometry><box size="${arm_length} ${arm_width} ${arm_height}" /></geometry>
+            <material name="arm_dark" />
+        </visual>
+        <!-- 3D雷达安装座：连接无人机机身与下置雷达 -->
+        <visual name="drone_lidar_mount">
+            <origin xyz="0 0 -0.0475" />
+            <geometry><cylinder radius="0.022" length="0.025" /></geometry>
+            <material name="drone_lidar_mount_color"><color rgba="0.25 0.25 0.28 1" /></material>
+        </visual>
+        <collision>
+            <geometry><box size="0.28 0.20 0.09" /></geometry>
+        </collision>
+        <inertial>
+            <mass value="1.2" />
+            <inertia ixx="0.018" ixy="0" ixz="0" iyy="0.024" iyz="0" izz="0.032" />
+        </inertial>
+    </link>
+
+    <xacro:macro name="rotor" params="name x y color">
+        <link name="${name}">
+            <visual>
+                <geometry><cylinder radius="${rotor_radius}" length="0.012" /></geometry>
+                <material name="${name}_color"><color rgba="${color}" /></material>
+            </visual>
+            <collision>
+                <geometry><cylinder radius="${rotor_radius}" length="0.012" /></geometry>
+            </collision>
+            <inertial>
+                <mass value="0.025" />
+                <inertia ixx="0.00014" ixy="0" ixz="0" iyy="0.00014" iyz="0" izz="0.00028" />
+            </inertial>
+        </link>
+        <joint name="${name}_joint" type="fixed">
+            <parent link="drone_base_link" />
+            <child link="${name}" />
+            <origin xyz="${x} ${y} 0.025" />
+        </joint>
+        <gazebo reference="${name}">
+            <material>Gazebo/Black</material>
+            <gravity>false</gravity>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:rotor name="front_left_rotor"  x="0.22"  y="0.22"  color="0.95 0.15 0.10 1" />
+    <xacro:rotor name="front_right_rotor" x="0.22"  y="-0.22" color="0.95 0.15 0.10 1" />
+    <xacro:rotor name="rear_left_rotor"   x="-0.22" y="0.22"  color="0.10 0.10 0.10 1" />
+    <xacro:rotor name="rear_right_rotor"  x="-0.22" y="-0.22" color="0.10 0.10 0.10 1" />
+
+    <!-- Drone-mounted 360-degree lidar. -->
+    <link name="drone_laser_link">
+        <visual>
+            <geometry><cylinder radius="0.045" length="0.035" /></geometry>
+            <material name="drone_laser_color"><color rgba="0.08 0.08 0.08 1" /></material>
+        </visual>
+        <collision>
+            <geometry><cylinder radius="0.045" length="0.035" /></geometry>
+        </collision>
+        <inertial>
+            <mass value="0.08" />
+            <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00008" />
+        </inertial>
+    </link>
+    <joint name="drone_laser_joint" type="fixed">
+        <parent link="drone_base_link" />
+        <child link="drone_laser_link" />
+        <origin xyz="0 0 -0.07" />
+    </joint>
+
+    <!-- Drone forward RGB-D camera. -->
+    <link name="drone_rgbd_link">
+        <visual>
+            <geometry><box size="0.06 0.10 0.055" /></geometry>
+            <material name="drone_camera_color"><color rgba="0.08 0.08 0.12 1" /></material>
+        </visual>
+        <collision><geometry><box size="0.06 0.10 0.055" /></geometry></collision>
+        <inertial>
+            <mass value="0.15" />
+            <inertia ixx="0.00016" ixy="0" ixz="0" iyy="0.00008" iyz="0" izz="0.00018" />
+        </inertial>
+    </link>
+    <joint name="drone_rgbd_joint" type="fixed">
+        <parent link="drone_base_link" />
+        <child link="drone_rgbd_link" />
+        <origin xyz="0.17 0 -0.015" />
+    </joint>
+
+    <gazebo reference="drone_base_link">
+        <material>Gazebo/Blue</material>
+        <gravity>false</gravity>
+    </gazebo>
+
+    <gazebo reference="drone_laser_link">
+        <material>Gazebo/Black</material>
+        <gravity>false</gravity>
+        <sensor name="drone_3d_laser" type="ray">
+            <pose>0 0 0 0 0 0</pose>
+            <always_on>true</always_on>
+            <visualize>true</visualize>
+            <update_rate>15</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>720</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.14159</min_angle>
+                        <max_angle>3.14159</max_angle>
+                    </horizontal>
+                    <vertical>
+                        <samples>16</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-0.261799</min_angle>
+                        <max_angle>0.261799</max_angle>
+                    </vertical>
+                </scan>
+                <range>
+                    <min>0.001</min>
+                    <max>20.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+                <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
+            </ray>
+            <plugin name="drone_3d_laser_controller" filename="libgazebo_ros_block_laser.so">
+                <topicName>/drone/lidar/points_raw</topicName>
+                <frameName>drone_laser_link</frameName>
+                <gaussianNoise>0.01</gaussianNoise>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <!-- A lightweight kinematic controller keeps the demo independent of flight stacks. -->
+    <gazebo>
+        <plugin name="drone_motion_controller" filename="libgazebo_ros_planar_move.so">
+            <robotNamespace>/drone</robotNamespace>
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>drone_odom</odometryFrame>
+            <robotBaseFrame>drone_base_link</robotBaseFrame>
+            <publishTF>true</publishTF>
+            <publishOdometry>true</publishOdometry>
+            <updateRate>50.0</updateRate>
+        </plugin>
+    </gazebo>
+</robot>
