@@ -17,6 +17,7 @@ class GroundTruthOdom:
         self.ground_truth_topic = rospy.get_param(
             "~ground_truth_topic", "/robot0/ground_truth/odom"
         )
+        self.publish_odom_tf = rospy.get_param("~publish_odom_tf", True)
 
         self.publisher = rospy.Publisher(
             self.ground_truth_topic, Odometry, queue_size=10
@@ -51,6 +52,9 @@ class GroundTruthOdom:
         message.pose.pose = pose
         message.twist.twist = state.twist
         self.publisher.publish(message)
+
+        if not self.publish_odom_tf:
+            return
 
         try:
             odom_translation, odom_rotation = self.listener.lookupTransform(

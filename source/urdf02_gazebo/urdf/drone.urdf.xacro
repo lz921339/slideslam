@@ -1,11 +1,34 @@
 <?xml version="1.0"?>
 <robot name="drone" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- ============================================================
+         命名约定（全组冻结，见《6.1_分工_组员A_Topic接口达标》第 2 节）
+           robot1/base_link                    机体
+           robot1/lidar_link                   3D 雷达
+           robot1/camera_link                  RGB-D 相机
+           robot1/camera_color_optical_frame   相机光学系（z 向前）
+           robot1/imu_link                     IMU
+           robot1/odom                         odom 坐标系（由 p3d 插件发布）
+         TF 树：
+           world -> robot1/odom -> robot1/base_link
+                                     |- robot1/lidar_link    (/tf_static, RSP)
+                                     |- robot1/imu_link      (/tf_static, RSP)
+                                     '- robot1/camera_link   (/tf_static, RSP)
+                                          '- robot1/camera_color_optical_frame
+         外部参数（安装位置，与旧版一致，未改动）：
+           雷达 xyz = 0 0 -0.07
+           相机 xyz = 0.17 0 -0.015
+         ============================================================ -->
     <xacro:property name="arm_length" value="0.62" />
     <xacro:property name="arm_width" value="0.045" />
     <xacro:property name="arm_height" value="0.025" />
     <xacro:property name="rotor_radius" value="0.105" />
 
-    <link name="drone_base_link">
+    <!-- 水平视场：640 / (2*tan(HFOV/2)) = 381.36，与算法侧写死的 fx 对齐 -->
+    <xacro:property name="camera_hfov" value="1.3962634" />
+    <xacro:property name="camera_width" value="640" />
+    <xacro:property name="camera_height" value="480" />
+
+    <link name="robot1/base_link">
         <visual name="body">
             <geometry><box size="0.28 0.20 0.09" /></geometry>
             <material name="drone_blue"><color rgba="0.05 0.25 0.85 1" /></material>
@@ -50,7 +73,7 @@
             </inertial>
         </link>
         <joint name="${name}_joint" type="fixed">
-            <parent link="drone_base_link" />
+            <parent link="robot1/base_link" />
             <child link="${name}" />
             <origin xyz="${x} ${y} 0.025" />
         </joint>
@@ -65,8 +88,8 @@
     <xacro:rotor name="rear_left_rotor"   x="-0.22" y="0.22"  color="0.10 0.10 0.10 1" />
     <xacro:rotor name="rear_right_rotor"  x="-0.22" y="-0.22" color="0.10 0.10 0.10 1" />
 
-    <!-- Drone-mounted 360-degree lidar. -->
-    <link name="drone_laser_link">
+    <!-- ============ 3D 雷达：robot1/lidar_link，下挂 0.07 m ============ -->
+    <link name="robot1/lidar_link">
         <visual>
             <geometry><cylinder radius="0.045" length="0.035" /></geometry>
             <material name="drone_laser_color"><color rgba="0.08 0.08 0.08 1" /></material>
@@ -80,13 +103,13 @@
         </inertial>
     </link>
     <joint name="drone_laser_joint" type="fixed">
-        <parent link="drone_base_link" />
-        <child link="drone_laser_link" />
+        <parent link="robot1/base_link" />
+        <child link="robot1/lidar_link" />
         <origin xyz="0 0 -0.07" />
     </joint>
 
-    <!-- Drone forward RGB-D camera. -->
-    <link name="drone_rgbd_link">
+    <!-- ============ RGB-D 相机：robot1/camera_link，前伸 0.17 m ============ -->
+    <link name="robot1/camera_link">
         <visual>
             <geometry><box size="0.06 0.10 0.055" /></geometry>
             <material name="drone_camera_color"><color rgba="0.08 0.08 0.12 1" /></material>
@@ -98,17 +121,41 @@
         </inertial>
     </link>
     <joint name="drone_rgbd_joint" type="fixed">
-        <parent link="drone_base_link" />
-        <child link="drone_rgbd_link" />
+        <parent link="robot1/base_link" />
+        <child link="robot1/camera_link" />
         <origin xyz="0.17 0 -0.015" />
     </joint>
 
-    <gazebo reference="drone_base_link">
+    <!-- 光学系：z 轴朝前、x 朝右、y 朝下（REP 103），与车侧 camera_optical_frame 同一套 rpy -->
+    <link name="robot1/camera_color_optical_frame" />
+    <joint name="drone_camera_optical_joint" type="fixed">
+        <parent link="robot1/camera_link" />
+        <child link="robot1/camera_color_optical_frame" />
+        <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679" />
+    </joint>
+
+    <!-- ============ IMU：robot1/imu_link，与机体重心重合 ============ -->
+    <link name="robot1/imu_link">
+        <inertial>
+            <mass value="0.01" />
+            <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001" />
+        </inertial>
+    </link>
+    <joint name="drone_imu_joint" type="fixed">
+        <parent link="robot1/base_link" />
+        <child link="robot1/imu_link" />
+        <origin xyz="0 0 0" />
+    </joint>
+
+    <gazebo reference="robot1/base_link">
         <material>Gazebo/Blue</material>
         <gravity>false</gravity>
     </gazebo>
 
-    <gazebo reference="drone_laser_link">
+    <!-- ============================ 3D 雷达 ============================ -->
+    <!-- block_laser 只能输出 sensor_msgs/PointCloud(v1)，由 bridge 转为机体系 PointCloud2；
+         该仿真源不提供 ring/time，完整 Faster-LIO 原始输入仍需单独验证。 -->
+    <gazebo reference="robot1/lidar_link">
         <material>Gazebo/Black</material>
         <gravity>false</gravity>
         <sensor name="drone_3d_laser" type="ray">
@@ -139,24 +186,117 @@
                 <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
             </ray>
             <plugin name="drone_3d_laser_controller" filename="libgazebo_ros_block_laser.so">
-                <topicName>/robot1/lidar/points_raw</topicName>
-                <frameName>drone_laser_link</frameName>
+                <topicName>/robot1/lidar/points_v1</topicName>
+                <frameName>robot1/lidar_link</frameName>
                 <gaussianNoise>0.01</gaussianNoise>
             </plugin>
         </sensor>
     </gazebo>
 
-    <!-- A lightweight kinematic controller keeps the demo independent of flight stacks. -->
+    <!-- ============================ RGB-D 相机 ============================ -->
+    <!-- 用法与车侧 car.xacro 的 car_rgbd_link 完全一致，只改名前缀。
+         注意：输出频率由 <sensor><update_rate> 决定，插件自身不读 updateRate 参数
+         （safe_rgbd_plugin.cpp 里没有该字段，写了也不生效），故此处只设 sensor 的 10 Hz。
+         HFOV=1.3962634 rad → fx = 640/(2*tan(HFOV/2)) = 381.36，
+         cx=(640-1)/2=319.5、cy=(480-1)/2=239.5，与算法侧写死的内参严格一致。 -->
+    <gazebo reference="robot1/camera_link">
+        <material>Gazebo/Blue</material>
+        <sensor type="depth" name="drone_rgbd_sensor">
+            <pose>0 0 0 0 0 0</pose>
+            <always_on>true</always_on>
+            <visualize>false</visualize>
+            <update_rate>10.0</update_rate>
+            <camera>
+                <horizontal_fov>${camera_hfov}</horizontal_fov>
+                <image>
+                    <width>${camera_width}</width>
+                    <height>${camera_height}</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+            </camera>
+            <plugin name="drone_rgbd_controller" filename="libgazebo_ros_safe_rgbd.so">
+                <robotNamespace>/robot1</robotNamespace>
+                <cameraName>/robot1/camera</cameraName>
+                <imageTopicName>color/image_raw</imageTopicName>
+                <cameraInfoTopicName>color/camera_info</cameraInfoTopicName>
+                <depthImageTopicName>aligned_depth_to_color/image_raw</depthImageTopicName>
+                <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+                <pointCloudTopicName>depth/points</pointCloudTopicName>
+                <frameName>robot1/camera_color_optical_frame</frameName>
+                <pointCloudCutoff>0.08</pointCloudCutoff>
+                <pointCloudCutoffMax>10.0</pointCloudCutoffMax>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <!-- ============================ IMU ============================ -->
+    <!-- 输出频率由 <sensor><update_rate> 决定（imu_sensor 插件没有 updateRateHZ 参数）。
+         必须给噪声：零噪声会让 LIO 的 IMU 预积分协方差退化。 -->
+    <gazebo reference="robot1/imu_link">
+        <sensor name="drone_imu" type="imu">
+            <always_on>true</always_on>
+            <visualize>false</visualize>
+            <update_rate>200</update_rate>
+            <imu>
+                <angular_velocity>
+                    <x><noise type="gaussian"><mean>0.0</mean><stddev>0.0002</stddev></noise></x>
+                    <y><noise type="gaussian"><mean>0.0</mean><stddev>0.0002</stddev></noise></y>
+                    <z><noise type="gaussian"><mean>0.0</mean><stddev>0.0002</stddev></noise></z>
+                </angular_velocity>
+                <linear_acceleration>
+                    <x><noise type="gaussian"><mean>0.0</mean><stddev>0.0017</stddev></noise></x>
+                    <y><noise type="gaussian"><mean>0.0</mean><stddev>0.0017</stddev></noise></y>
+                    <z><noise type="gaussian"><mean>0.0</mean><stddev>0.0017</stddev></noise></z>
+                </linear_acceleration>
+            </imu>
+            <plugin name="drone_imu_controller" filename="libgazebo_ros_imu_sensor.so">
+                <robotNamespace>/robot1</robotNamespace>
+                <topicName>imu/data</topicName>
+                <frameName>robot1/imu_link</frameName>
+                <initialOrientationAsReference>false</initialOrientationAsReference>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <!-- ==================== 运动执行（cmd_vel，2D） ==================== -->
+    <!-- planar_move 只做平面运动，负责消费 /robot1/cmd_vel 并把机体挪走；
+         它不支持 publishTF / publishOdometry / updateRate（已核实其 .so 只有
+         robotNamespace / commandTopic / odometryTopic / odometryFrame /
+         robotBaseFrame / odometryRate），所以这里只用这六个真实参数。
+         它的 odom 改名到 odom_2d，避免与下面 p3d 抢 /robot1/odom。 -->
     <gazebo>
         <plugin name="drone_motion_controller" filename="libgazebo_ros_planar_move.so">
             <robotNamespace>/robot1</robotNamespace>
             <commandTopic>cmd_vel</commandTopic>
-            <odometryTopic>odom</odometryTopic>
-            <odometryFrame>robot1/odom</odometryFrame>
-            <robotBaseFrame>drone_base_link</robotBaseFrame>
-            <publishTF>true</publishTF>
-            <publishOdometry>true</publishOdometry>
+            <odometryTopic>odom_2d</odometryTopic>
+            <odometryFrame>robot1/odom_2d</odometryFrame>
+            <robotBaseFrame>robot1/base_link</robotBaseFrame>
+            <odometryRate>50.0</odometryRate>
+        </plugin>
+    </gazebo>
+
+    <!-- ==================== 里程计（6DoF，p3d） ==================== -->
+    <!-- p3d 的 frameName 必须是 Gazebo 中存在的实体；以 world 取 6DoF 位姿，
+         再由 drone_odom_tf.py 将消息规范到 robot1/odom 并发布对应 TF。 -->
+    <gazebo>
+        <plugin name="drone_p3d_odometry" filename="libgazebo_ros_p3d.so">
+            <robotNamespace>/robot1</robotNamespace>
+            <bodyName>robot1/base_link</bodyName>
+            <frameName>world</frameName>
+            <topicName>odom_raw</topicName>
             <updateRate>50.0</updateRate>
+            <gaussianNoise>0.0</gaussianNoise>
+            <xyzOffset>0 0 0</xyzOffset>
+            <rpyOffset>0 0 0</rpyOffset>
         </plugin>
     </gazebo>
 </robot>

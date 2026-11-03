@@ -182,6 +182,7 @@ target_link_libraries(gazebo_ros_safe_rgbd
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/car_drone_communication.py
+  scripts/drone_odom_tf.py
   scripts/drone_pointcloud2_bridge.py
   scripts/ground_truth_odom.py
   scripts/px4_offboard_control.py

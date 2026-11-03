@@ -3,16 +3,23 @@
 当前阶段只联调一架同时搭载 RGB-D 相机和 3D 激光雷达的无人机，统一使用 `robot1` 命名空间。请仿真侧发布同步的 RGB 图像、与 RGB 对齐的深度图、相机内参、3D 点云、无人机 6DoF 里程计、仿真时钟以及完整 TF。RGB 和深度建议为 10 Hz，时间差不超过 0.02 秒；图像、点云与里程计时间差建议不超过 0.05 秒。深度图建议使用 `32FC1`、单位为米；3D 点云使用 `sensor_msgs/PointCloud2`，至少包含 `x、y、z、intensity` 字段，建议为 10～15 Hz。请另行发布 `/robot1/ground_truth/odom` 作为真实位姿，它只用于 ATE/RPE 精度评估，不能输入 SlideSLAM。配准点云、语义点云、语义观测、优化里程计、轨迹和地图等 Topic 由算法侧生成，仿真侧无需发布。测试场景请布置 `chair`、`table`、`tv/monitor` 等 RGB-D 模型支持的目标，以及车辆、树干或灯杆等 3D 雷达模型支持的目标，并提供包含前进、横移、变高度、偏航和返回已观测区域的飞行轨迹。
 ## 本次动态检查结果
 
-检查环境：`slideslam-single-car:small-city-dev`（基于当前 `source/` 重建），无 GUI Gazebo，ROS Noetic。只有完整满足本表契约且实际收到消息的接口才标记为已实现。
+检查环境：`slideslam-single-car:small-city-dev`（基于当前 `source/` 重建），服务器 X11/Gazebo GUI 链路，ROS Noetic。以下状态来自容器运行期间的实际 ROS 采样；只有完整满足本表契约且实际收到消息的接口才标记为已实现。
 
 | Topic | 动态检查结果 | 状态 |
 |---|---|---|
-| `/clock` | `rosgraph_msgs/Clock`，实测约 250 Hz，仿真时间持续推进 | **已实现** |
-| `/robot1/lidar/points_raw` | 实测约 14.7 Hz，但当前为 `sensor_msgs/PointCloud`，不满足完整接口要求的 PointCloud2 字段/frame 契约 | 未实现 |
-| `/robot1/lidar/cloud_registered_body` | 实测约 14.7 Hz，字段含 x/y/z/intensity；`frame_id` 仍为 `drone_laser_link`，不是 `robot1/base_link` | 未实现 |
-| `/robot1/odom` | 实测约 19.2 Hz，`header.frame_id=robot1/odom`；`child_frame_id=drone_base_link`，不是 `robot1/base_link` | 未实现 |
-| `/tf`、`/tf_static` | 未验证到要求的 robot1 TF，且 `/tf_static` 未发布 | 未实现 |
-| RGB-D、IMU、`/robot1/ground_truth/odom` | 对应 Topic 未发布 | 未实现 |
+| `/clock` | `rosgraph_msgs/Clock`，仿真时间持续推进 | **已实现** |
+| `/robot1/camera/color/image_raw` | 实测约 13.2 Hz；实际收到 `sensor_msgs/Image`，分辨率 `640×480`、编码 `rgb8`，`frame_id=robot1/camera_color_optical_frame` | **已实现** |
+| `/robot1/camera/aligned_depth_to_color/image_raw` | 实测约 15.2 Hz；实际收到 `sensor_msgs/Image`，编码 `32FC1`，`frame_id=robot1/camera_color_optical_frame` | **已实现** |
+| `/robot1/camera/color/camera_info` | 实测约 12.0 Hz；实际收到 `sensor_msgs/CameraInfo`，分辨率 `640×480`，发布内参 `fx=fy=381.3625`、`cx=319.5`、`cy=239.5`，`frame_id=robot1/camera_color_optical_frame` | **已实现** |
+| `/robot1/lidar/points_v1` | 实测约 14.8 Hz，类型为 `sensor_msgs/PointCloud`；本轮仅作为 Gazebo 原始雷达内部话题，未作为要求中的 `/robot1/lidar/points_raw` 达标接口 | 未实现 |
+| `/robot1/lidar/cloud_registered_body` | 实测约 15.0 Hz；实际收到 `sensor_msgs/PointCloud2`，字段含 x/y/z/intensity，`frame_id=robot1/base_link` | **已实现** |
+| `/robot1/odom` | 实测约 50 Hz；`header.frame_id=robot1/odom`，`child_frame_id=robot1/base_link` | **已实现** |
+| `/robot1/ground_truth/odom` | 实测约 51.1 Hz；实际收到 `nav_msgs/Odometry`，`header.frame_id=world`，仅作为真值评估输出 | **已实现** |
+| `/robot1/imu/data` | 实际收到 `sensor_msgs/Imu`，`frame_id=robot1/imu_link`，但实测仅约 1 Hz，不满足 100～400 Hz 要求 | 未实现 |
+| `/tf`、`/tf_static` | `/tf_static` 实测包含 `robot1/base_link` 到 `robot1/camera_link`、`robot1/camera_color_optical_frame`、`robot1/lidar_link`、`robot1/imu_link` 外参；但 `/tf` 同时存在 `robot1/odom → robot1/base_link` 和 Gazebo 的 `robot1/odom_2d → robot1/base_link`，并出现 `TF_REPEATED_DATA`，不满足唯一父节点契约 | 未实现 |
+| `/robot1/cmd_vel` | 类型为 `geometry_msgs/Twist`，当前无发布方；本轮未执行三维平移、变高度、偏航和返回轨迹测试 | 未实现 |
+
+补充核对：本轮尚未完成 RGB/深度、图像/点云/里程计的逐消息时间差统计，也尚未对整帧点云做 NaN/Inf 全量计数；这些项目不据此宣称已满足。
 
 
 ## 最小联调接口

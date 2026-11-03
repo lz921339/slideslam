@@ -29,6 +29,40 @@
     <node pkg="gazebo_ros" type="spawn_model" name="spawn_drone"
           args="-urdf -model drone -param drone_description -x 1.5 -y 0 -z 1.5" />
 
+    <group ns="drone">
+        <param name="robot_description"
+               command="$(find xacro)/xacro $(find urdf02_gazebo)/urdf/drone.urdf.xacro" />
+        <node pkg="robot_state_publisher" type="robot_state_publisher"
+              name="robot_state_publisher" output="screen">
+            <remap from="tf" to="/tf" />
+            <remap from="tf_static" to="/tf_static" />
+            <param name="publish_frequency" value="30.0" />
+            <param name="use_tf_static" value="true" />
+        </node>
+    </group>
+
+    <node pkg="urdf02_gazebo" type="drone_odom_tf.py" name="drone_odom_tf" output="screen">
+        <param name="odom_topic" value="/robot1/odom_raw" />
+        <param name="odom_output_topic" value="/robot1/odom" />
+        <param name="odom_frame" value="robot1/odom" />
+        <param name="base_frame" value="robot1/base_link" />
+        <param name="mode" value="auto" />
+    </node>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_robot1_odom"
+          args="0 0 0 0 0 0 world robot1/odom" />
+
+    <!-- Ground truth is for evaluation only and must not feed SlideSLAM. -->
+    <node pkg="urdf02_gazebo" type="ground_truth_odom.py" name="drone_ground_truth_odom"
+          output="screen">
+        <param name="model_name" value="drone" />
+        <param name="world_frame" value="world" />
+        <param name="odom_frame" value="robot1/odom" />
+        <param name="base_frame" value="robot1/base_link" />
+        <param name="ground_truth_topic" value="/robot1/ground_truth/odom" />
+        <param name="publish_odom_tf" value="false" />
+    </node>
+
     <!-- Bidirectional car/drone telemetry communication. -->
     <node pkg="urdf02_gazebo" type="car_drone_communication.py"
           name="car_drone_communication" output="screen" />
