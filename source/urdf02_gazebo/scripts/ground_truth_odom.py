@@ -14,9 +14,12 @@ class GroundTruthOdom:
         self.world_frame = rospy.get_param("~world_frame", "world")
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.base_frame = rospy.get_param("~base_frame", "base_footprint")
+        self.ground_truth_topic = rospy.get_param(
+            "~ground_truth_topic", "/robot0/ground_truth/odom"
+        )
 
         self.publisher = rospy.Publisher(
-            "/robot0/ground_truth/odom", Odometry, queue_size=10
+            self.ground_truth_topic, Odometry, queue_size=10
         )
         self.broadcaster = tf.TransformBroadcaster()
         self.listener = tf.TransformListener()

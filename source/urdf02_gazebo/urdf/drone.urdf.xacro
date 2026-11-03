@@ -139,7 +139,7 @@
                 <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
             </ray>
             <plugin name="drone_3d_laser_controller" filename="libgazebo_ros_block_laser.so">
-                <topicName>/drone/lidar/points_raw</topicName>
+                <topicName>/robot1/lidar/points_raw</topicName>
                 <frameName>drone_laser_link</frameName>
                 <gaussianNoise>0.01</gaussianNoise>
             </plugin>
@@ -149,10 +149,10 @@
     <!-- A lightweight kinematic controller keeps the demo independent of flight stacks. -->
     <gazebo>
         <plugin name="drone_motion_controller" filename="libgazebo_ros_planar_move.so">
-            <robotNamespace>/drone</robotNamespace>
+            <robotNamespace>/robot1</robotNamespace>
             <commandTopic>cmd_vel</commandTopic>
             <odometryTopic>odom</odometryTopic>
-            <odometryFrame>drone_odom</odometryFrame>
+            <odometryFrame>robot1/odom</odometryFrame>
             <robotBaseFrame>drone_base_link</robotBaseFrame>
             <publishTF>true</publishTF>
             <publishOdometry>true</publishOdometry>
