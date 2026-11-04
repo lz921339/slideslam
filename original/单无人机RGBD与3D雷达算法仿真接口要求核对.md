@@ -12,14 +12,15 @@
 | `/robot1/camera/aligned_depth_to_color/image_raw` | 实测约 15.2 Hz；实际收到 `sensor_msgs/Image`，编码 `32FC1`，`frame_id=robot1/camera_color_optical_frame` | **已实现** |
 | `/robot1/camera/color/camera_info` | 实测约 12.0 Hz；实际收到 `sensor_msgs/CameraInfo`，分辨率 `640×480`，发布内参 `fx=fy=381.3625`、`cx=319.5`、`cy=239.5`，`frame_id=robot1/camera_color_optical_frame` | **已实现** |
 | `/robot1/lidar/points_v1` | 实测约 14.8 Hz，类型为 `sensor_msgs/PointCloud`；本轮仅作为 Gazebo 原始雷达内部话题，未作为要求中的 `/robot1/lidar/points_raw` 达标接口 | 未实现 |
+| `/robot1/lidar/points_raw` | 实测约 14.7 Hz；实际收到 `sensor_msgs/PointCloud2`，`frame_id=robot1/lidar_link`，字段为 `x/y/z/intensity/ring/time`，桥接节点过滤非有限点 | **已实现** |
 | `/robot1/lidar/cloud_registered_body` | 实测约 15.0 Hz；实际收到 `sensor_msgs/PointCloud2`，字段含 x/y/z/intensity，`frame_id=robot1/base_link` | **已实现** |
 | `/robot1/odom` | 实测约 50 Hz；`header.frame_id=robot1/odom`，`child_frame_id=robot1/base_link` | **已实现** |
 | `/robot1/ground_truth/odom` | 实测约 51.1 Hz；实际收到 `nav_msgs/Odometry`，`header.frame_id=world`，仅作为真值评估输出 | **已实现** |
-| `/robot1/imu/data` | 实际收到 `sensor_msgs/Imu`，`frame_id=robot1/imu_link`，但实测仅约 1 Hz，不满足 100～400 Hz 要求 | 未实现 |
-| `/tf`、`/tf_static` | `/tf_static` 实测包含 `robot1/base_link` 到 `robot1/camera_link`、`robot1/camera_color_optical_frame`、`robot1/lidar_link`、`robot1/imu_link` 外参；但 `/tf` 同时存在 `robot1/odom → robot1/base_link` 和 Gazebo 的 `robot1/odom_2d → robot1/base_link`，并出现 `TF_REPEATED_DATA`，不满足唯一父节点契约 | 未实现 |
-| `/robot1/cmd_vel` | 类型为 `geometry_msgs/Twist`，当前无发布方；本轮未执行三维平移、变高度、偏航和返回轨迹测试 | 未实现 |
+| `/robot1/imu/data` | 实测约 237.5 Hz；实际收到 `sensor_msgs/Imu`，`frame_id=robot1/imu_link`，频率落在 100～400 Hz 要求内 | **已实现** |
+| `/tf`、`/tf_static` | `/tf_static` 包含 `robot1/base_link` 到相机、光学坐标系、雷达和 IMU 的外参；动态 TF 仅观察到 `robot1/odom → robot1/base_link`（车辆自身的 `odom → base_footprint` 不属于 robot1），未再出现 `robot1/odom_2d` 或重复数据 | **已实现** |
+| `/robot1/cmd_vel` | `geometry_msgs/Twist` 控制节点以 50 Hz 更新 Gazebo 模型；发布 `linear.x/y/z` 与 `angular.z` 后，位姿从 `(1.5, 0.0, 1.5)` 变为约 `(2.78, 1.35, 2.20)`，确认前进、横移、变高度和偏航控制生效；`drone_trajectory.py` 提供前进、横移、升降、偏航和返回段 | **已实现** |
 
-补充核对：本轮尚未完成 RGB/深度、图像/点云/里程计的逐消息时间差统计，也尚未对整帧点云做 NaN/Inf 全量计数；这些项目不据此宣称已满足。
+补充核对：本轮尚未完成 RGB/深度、图像/点云/里程计的逐消息时间差统计；点云桥接节点已逐点过滤 `NaN/Inf`，但尚未完成独立的整帧有限值计数报告。上述项目不据此宣称已满足。
 
 
 ## 最小联调接口

@@ -2,6 +2,8 @@
       <arg name="gui" default="true" />
     <arg name="paused" default="false" />
     <arg name="use_sim_time" default="true" />
+    <arg name="enable_trajectory" default="false" />
+    <arg name="trajectory_loop" default="true" />
 
     <!-- gazebo_ros publishes /clock through its Gazebo API plugin.  Keep the
          parameter explicit so every sensor, odometry message, and TF consumer
@@ -48,6 +50,24 @@
         <param name="base_frame" value="robot1/base_link" />
         <param name="mode" value="auto" />
     </node>
+
+    <!-- Consume /robot1/cmd_vel and apply 3D translation/yaw through Gazebo. -->
+    <node pkg="urdf02_gazebo" type="drone_cmd_vel_controller.py"
+          name="drone_cmd_vel_controller" output="screen">
+        <param name="model_name" value="drone" />
+        <param name="cmd_vel_topic" value="/robot1/cmd_vel" />
+        <param name="command_timeout" value="0.5" />
+        <param name="update_rate" value="50.0" />
+    </node>
+
+    <group if="$(arg enable_trajectory)">
+        <node pkg="urdf02_gazebo" type="drone_trajectory.py"
+              name="drone_trajectory" output="screen">
+            <param name="cmd_vel_topic" value="/robot1/cmd_vel" />
+            <param name="loop" value="$(arg trajectory_loop)" />
+            <param name="start_delay" value="2.0" />
+        </node>
+    </group>
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_robot1_odom"
           args="0 0 0 0 0 0 world robot1/odom" />

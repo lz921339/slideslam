@@ -239,13 +239,13 @@
     </gazebo>
 
     <!-- ============================ IMU ============================ -->
-    <!-- 输出频率由 <sensor><update_rate> 决定（imu_sensor 插件没有 updateRateHZ 参数）。
-         必须给噪声：零噪声会让 LIO 的 IMU 预积分协方差退化。 -->
+    <!-- Both the Gazebo sensor and the ROS plugin need an explicit rate.  The
+         plugin throttles publication with updateRateHZ. -->
     <gazebo reference="robot1/imu_link">
         <sensor name="drone_imu" type="imu">
             <always_on>true</always_on>
             <visualize>false</visualize>
-            <update_rate>200</update_rate>
+            <update_rate>400</update_rate>
             <imu>
                 <angular_velocity>
                     <x><noise type="gaussian"><mean>0.0</mean><stddev>0.0002</stddev></noise></x>
@@ -262,27 +262,14 @@
                 <robotNamespace>/robot1</robotNamespace>
                 <topicName>imu/data</topicName>
                 <frameName>robot1/imu_link</frameName>
+                <updateRateHZ>400.0</updateRateHZ>
                 <initialOrientationAsReference>false</initialOrientationAsReference>
             </plugin>
         </sensor>
     </gazebo>
 
-    <!-- ==================== 运动执行（cmd_vel，2D） ==================== -->
-    <!-- planar_move 只做平面运动，负责消费 /robot1/cmd_vel 并把机体挪走；
-         它不支持 publishTF / publishOdometry / updateRate（已核实其 .so 只有
-         robotNamespace / commandTopic / odometryTopic / odometryFrame /
-         robotBaseFrame / odometryRate），所以这里只用这六个真实参数。
-         它的 odom 改名到 odom_2d，避免与下面 p3d 抢 /robot1/odom。 -->
-    <gazebo>
-        <plugin name="drone_motion_controller" filename="libgazebo_ros_planar_move.so">
-            <robotNamespace>/robot1</robotNamespace>
-            <commandTopic>cmd_vel</commandTopic>
-            <odometryTopic>odom_2d</odometryTopic>
-            <odometryFrame>robot1/odom_2d</odometryFrame>
-            <robotBaseFrame>robot1/base_link</robotBaseFrame>
-            <odometryRate>50.0</odometryRate>
-        </plugin>
-    </gazebo>
+    <!-- Movement is handled by drone_cmd_vel_controller.py.  Keeping one
+         controller avoids the planar plugin's second odom -> base TF. -->
 
     <!-- ==================== 里程计（6DoF，p3d） ==================== -->
     <!-- p3d 的 frameName 必须是 Gazebo 中存在的实体；以 world 取 6DoF 位姿，
@@ -293,6 +280,7 @@
             <bodyName>robot1/base_link</bodyName>
             <frameName>world</frameName>
             <topicName>odom_raw</topicName>
+            <updateRateHZ>50.0</updateRateHZ>
             <updateRate>50.0</updateRate>
             <gaussianNoise>0.0</gaussianNoise>
             <xyzOffset>0 0 0</xyzOffset>
